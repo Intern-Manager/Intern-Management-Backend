@@ -1,0 +1,18 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost,1433;Database=InternManagerDB;User Id=sa;Password=YOUR_PASSWORD_HERE;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "InternManagement",
+    "Audience": "InternManagement",
+    "Key": "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_KEY_32+_CHARS",
+    "AccessTokenMinutes": 60
+  }
+}
