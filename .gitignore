@@ -1,11 +1,9 @@
-# frontend
-node_modules
-dist
-
 # backend
 bin
 obj
 .vs
+*.csproj.user
+*.csproj.user.*
 
 # environment
 .env
@@ -15,3 +13,14 @@ obj
 
 # logs
 *.log
+
+# appsettings - DO NOT COMMIT SECRETS
+appsettings.Development.json
+appsettings.Production.json
+appsettings.json
+
+# launch settings (contains port configs)
+**/Properties/launchSettings.json
+
+# IDE
+.idea
