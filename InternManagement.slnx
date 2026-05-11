@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="InternManagement.API/InternManagement.API.csproj" />
+  <Project Path="InternManagement.Application/InternManagement.Application.csproj" />
+  <Project Path="InternManagement.Domain/InternManagement.Domain.csproj" />
+  <Project Path="InternManagement.Infrastructure/InternManagement.Infrastructure.csproj" />
+</Solution>
