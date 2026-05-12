@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace InternManagement.Domain.Entities;
 
 public class Role

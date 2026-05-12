@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using InternManagement.Domain.Entities;
 
 namespace InternManagement.Application.DTOs;
@@ -32,18 +33,47 @@ public record UserDetailDto(
     DateTime? UpdatedAt);
 
 public record CreateUserRequest(
+    [Required(ErrorMessage = "Full name is required")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters")]
+    [RegularExpression(@"^[a-zA-ZÀ-ỹ\s]+$", ErrorMessage = "Full name can only contain letters and spaces")]
     string FullName,
+
+    [Required(ErrorMessage = "Email is required")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
+    [StringLength(100)]
     string Email,
+
+    [Required(ErrorMessage = "Password is required")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
     string Password,
+
+    [Range(1, int.MaxValue, ErrorMessage = "Role is required")]
     int RoleId,
+
+    [Phone(ErrorMessage = "Invalid phone format")]
+    [StringLength(20, MinimumLength = 10, ErrorMessage = "Phone must be between 10 and 20 characters")]
     string? Phone = null);
 
 public record UpdateUserRequest(
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters")]
+    [RegularExpression(@"^[a-zA-ZÀ-ỹ\s]+$", ErrorMessage = "Full name can only contain letters and spaces")]
     string? FullName,
+
+    [Phone(ErrorMessage = "Invalid phone format")]
+    [StringLength(20, MinimumLength = 10, ErrorMessage = "Phone must be between 10 and 20 characters")]
     string? Phone,
+
     string? AvatarUrl,
+
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid role")]
     int? RoleId,
+
+    [RegularExpression(@"^(Active|Inactive)$", ErrorMessage = "Status must be 'Active' or 'Inactive'")]
     string? Status);
+
+public record UpdateAvatarRequest(
+    [Required]
+    string AvatarUrl);
 
 public record UserFilter(string? Search, string? Status, int? RoleId);
 

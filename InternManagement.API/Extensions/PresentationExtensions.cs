@@ -54,25 +54,10 @@ public static class PresentationExtensions
             app.UseSwaggerUI();
         }
 
-        app.MapRoleEndpoints();
-        app.MapUserEndpoints();
-        app.MapInternProfileEndpoints();
-        app.MapInternshipCampaignEndpoints();
-        app.MapCampaignApplicationEndpoints();
-        app.MapInterviewEndpoints();
-        app.MapTrainingProgramEndpoints();
-        app.MapLearningResourceEndpoints();
-        app.MapMentorshipEndpoints();
-        app.MapTaskItemEndpoints();
-        app.MapDailyLogEndpoints();
-        app.MapAssessmentEndpoints();
-        app.MapFeedbackEndpoints();
-        app.MapCommunicationEndpoints();
-        app.MapNotificationEndpoints();
-        app.MapReportEndpoints();
-        app.MapAttendanceEndpoints();
-        app.MapCertificateEndpoints();
+        // Map all CRUD endpoints
+        app.MapAllEndpoints();
 
+        // Auth endpoints
         var auth = app.MapGroup("/auth");
 
         auth.MapPost("/register", async (RegisterRequest req, IAuthService svc, CancellationToken ct) =>
