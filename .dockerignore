@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vs
+.vscode
+.idea
+*.user
+*.suo
+
+# Build outputs
+bin/
+obj/
+
+# Logs
+*.log
+logs/
+
+# Environment files (contain secrets)
+.env
+.env.*
+appsettings*.json
+!appsettings.json.example
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Test files
+**/*.Tests/
+**/*.Test/
+*.TestResults/
+
+# Misc
+*.md
+README*
+LICENSE

@@ -1,5 +1,4 @@
 using InternManagement.Application.Auth;
-using InternManagement.Application.Crud;
 using InternManagement.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 

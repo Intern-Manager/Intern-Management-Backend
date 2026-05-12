@@ -42,7 +42,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, EfNotificationRepository>();
         services.AddScoped<IReportRepository, EfReportRepository>();
         services.AddScoped<IAttendanceRepository, EfAttendanceRepository>();
-        services.AddScoped<ICertificateRepository, EfCertificateRepository>();
+        services.AddScoped<ICertificateRepository, CertificateRepository>();
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 

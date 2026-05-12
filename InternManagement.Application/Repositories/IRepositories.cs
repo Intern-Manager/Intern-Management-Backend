@@ -127,6 +127,6 @@ public interface IAttendanceRepository : IGenericRepository<Attendance>
 public interface ICertificateRepository : IGenericRepository<Certificate>
 {
     Task<CertificateDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
-    Task<IEnumerable<CertificateDto>> GetAllDtoAsync(PaginationRequest pagination, CertificateFilter? filter = null, CancellationToken ct = default);
-    Task<int> CountAsync(CertificateFilter? filter = null, CancellationToken ct = default);
+    Task<IEnumerable<Certificate>> GetAllPagedAsync(PaginationRequest pagination, CertificateFilter? filter = null, CancellationToken ct = default);
+    Task<int> CountWithFilterAsync(CertificateFilter? filter = null, CancellationToken ct = default);
 }
