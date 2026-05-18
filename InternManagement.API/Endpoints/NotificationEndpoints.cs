@@ -11,13 +11,13 @@ public static class NotificationEndpoints
         var group = app.MapGroup("/api/notifications").WithTags("Notifications");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? category,
             [FromQuery] int? userId,
             [FromQuery] bool? isRead,
-            INotificationService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            INotificationService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new NotificationFilter(category, userId, isRead);

@@ -11,16 +11,16 @@ public static class AssessmentEndpoints
         var group = app.MapGroup("/api/assessments").WithTags("Assessments");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? assessmentType,
             [FromQuery] int? internId,
             [FromQuery] int? mentorId,
             [FromQuery] int? programId,
             [FromQuery] DateOnly? fromDate,
             [FromQuery] DateOnly? toDate,
-            IAssessmentService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IAssessmentService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new AssessmentFilter(assessmentType, internId, mentorId, programId, fromDate, toDate);

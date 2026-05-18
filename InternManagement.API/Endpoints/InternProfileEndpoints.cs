@@ -11,14 +11,14 @@ public static class InternProfileEndpoints
         var group = app.MapGroup("/api/intern-profiles").WithTags("InternProfiles");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] string? university,
             [FromQuery] string? major,
             [FromQuery] int? graduationYear,
-            IInternProfileService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IInternProfileService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new InternProfileFilter(search, university, major, graduationYear);

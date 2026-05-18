@@ -11,19 +11,33 @@ public static class TaskItemEndpoints
         var group = app.MapGroup("/api/tasks").WithTags("Tasks");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] string? status,
             [FromQuery] string? priority,
             [FromQuery] int? internId,
             [FromQuery] int? assignedBy,
             [FromQuery] int? programId,
-            ITaskItemService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            ITaskItemService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new TaskItemFilter(search, status, priority, internId, assignedBy, programId);
+            return await service.GetAllAsync(pagination, filter, ct);
+        });
+
+        group.MapGet("/intern/{internId:int}", async (int internId, [FromQuery] string? search, [FromQuery] string? status, [FromQuery] string? priority, [FromQuery] int? programId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, ITaskItemService service = null!, CancellationToken ct = default) =>
+        {
+            var pagination = new PaginationRequest(page, pageSize);
+            var filter = new TaskItemFilter(search, status, priority, internId, null, programId);
+            return await service.GetAllAsync(pagination, filter, ct);
+        });
+
+        group.MapGet("/mentor/{mentorId:int}", async (int mentorId, [FromQuery] string? search, [FromQuery] string? status, [FromQuery] string? priority, [FromQuery] int? programId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, ITaskItemService service = null!, CancellationToken ct = default) =>
+        {
+            var pagination = new PaginationRequest(page, pageSize);
+            var filter = new TaskItemFilter(search, status, priority, null, mentorId, programId);
             return await service.GetAllAsync(pagination, filter, ct);
         });
 
@@ -44,5 +58,23 @@ public static class TaskItemEndpoints
 
         group.MapDelete("/{id:int}", async (int id, ITaskItemService service, CancellationToken ct) =>
             await service.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound());
+
+        // Submissions
+        group.MapGet("/{taskId:int}/submissions", async (int taskId, ITaskSubmissionService service, CancellationToken ct) =>
+            await service.GetByTaskIdAsync(taskId, ct));
+
+        group.MapPost("/{taskId:int}/submit", async (int taskId, CreateTaskSubmissionRequest request, ITaskSubmissionService service, CancellationToken ct) =>
+        {
+            var submission = request with { TaskId = taskId };
+            return Results.Created("", await service.CreateAsync(submission, ct));
+        });
+
+        group.MapPut("/submissions/{id:int}/grade", async (int id, [FromBody] GradeSubmissionRequest request, ITaskSubmissionService service, CancellationToken ct) =>
+        {
+            // Get gradedBy from auth context (simplified - in real app, get from JWT)
+            var gradedBy = 1;
+            var result = await service.GradeAsync(id, gradedBy, request, ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        });
     }
 }

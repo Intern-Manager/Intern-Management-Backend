@@ -11,16 +11,16 @@ public static class InterviewEndpoints
         var group = app.MapGroup("/api/interviews").WithTags("Interviews");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? status,
             [FromQuery] int? campaignId,
             [FromQuery] int? internId,
             [FromQuery] int? interviewerId,
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate,
-            IInterviewService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IInterviewService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new InterviewFilter(null, status, campaignId, internId, interviewerId, fromDate, toDate);

@@ -87,10 +87,20 @@ public interface IMentorshipService
 public interface ITaskItemService
 {
     Task<PaginatedResult<TaskItemDto>> GetAllAsync(PaginationRequest pagination, TaskItemFilter? filter = null, CancellationToken ct = default);
+    Task<PaginatedResult<TaskItemDto>> GetByInternAsync(int internId, PaginationRequest pagination, CancellationToken ct = default);
+    Task<PaginatedResult<TaskItemDto>> GetByMentorAsync(int mentorId, PaginationRequest pagination, CancellationToken ct = default);
     Task<TaskItemDetailDto?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<TaskItemDto?> CreateAsync(CreateTaskItemRequest request, CancellationToken ct = default);
     Task<TaskItemDto?> UpdateAsync(int id, UpdateTaskItemRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+}
+
+public interface ITaskSubmissionService
+{
+    Task<IEnumerable<TaskSubmissionDto>> GetByTaskIdAsync(int taskId, CancellationToken ct = default);
+    Task<TaskSubmissionDto?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<TaskSubmissionDto?> CreateAsync(CreateTaskSubmissionRequest request, CancellationToken ct = default);
+    Task<TaskSubmissionDto?> GradeAsync(int id, int gradedBy, GradeSubmissionRequest request, CancellationToken ct = default);
 }
 
 public interface IDailyLogService
@@ -162,5 +172,14 @@ public interface ICertificateService
     Task<CertificateDetailDto?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<CertificateDto?> CreateAsync(CreateCertificateRequest request, CancellationToken ct = default);
     Task<CertificateDto?> UpdateAsync(int id, UpdateCertificateRequest request, CancellationToken ct = default);
+    Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+}
+
+public interface IDepartmentService
+{
+    Task<PaginatedResult<DepartmentDto>> GetAllAsync(PaginationRequest pagination, DepartmentFilter? filter = null, CancellationToken ct = default);
+    Task<DepartmentDetailDto?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<DepartmentDto?> CreateAsync(CreateDepartmentRequest request, CancellationToken ct = default);
+    Task<DepartmentDto?> UpdateAsync(int id, UpdateDepartmentRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }

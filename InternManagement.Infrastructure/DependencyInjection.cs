@@ -4,6 +4,7 @@ using InternManagement.Infrastructure.Auth;
 using InternManagement.Infrastructure.Persistence;
 using InternManagement.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,7 +15,13 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+        {
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+            
+            // Suppress warnings
+            options.ConfigureWarnings(w => 
+                w.Ignore(RelationalEventId.PendingModelChangesWarning));
+        });
 
         // Auth interfaces - use fully qualified names to avoid ambiguity
         services.AddScoped<Application.Auth.IUserRepository, Auth.EfUserRepository>();
@@ -35,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<ILearningResourceRepository, EfLearningResourceRepository>();
         services.AddScoped<IMentorshipRepository, EfMentorshipRepository>();
         services.AddScoped<ITaskItemRepository, EfTaskItemRepository>();
+        services.AddScoped<ITaskSubmissionRepository, EfTaskSubmissionRepository>();
         services.AddScoped<IDailyLogRepository, EfDailyLogRepository>();
         services.AddScoped<IAssessmentRepository, EfAssessmentRepository>();
         services.AddScoped<IFeedbackRepository, EfFeedbackRepository>();
@@ -43,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IReportRepository, EfReportRepository>();
         services.AddScoped<IAttendanceRepository, EfAttendanceRepository>();
         services.AddScoped<ICertificateRepository, CertificateRepository>();
+        services.AddScoped<IDepartmentRepository, EfDepartmentRepository>();
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 

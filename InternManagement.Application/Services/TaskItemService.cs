@@ -16,6 +16,22 @@ public class TaskItemService : ITaskItemService
         return items.ToPaginatedResult(pagination, count);
     }
 
+    public async Task<PaginatedResult<TaskItemDto>> GetByInternAsync(int internId, PaginationRequest pagination, CancellationToken ct = default)
+    {
+        var filter = new TaskItemFilter(null, null, null, internId, null, null);
+        var count = await _repository.CountAsync(filter, ct);
+        var items = await _repository.GetAllDtoAsync(pagination, filter, ct);
+        return items.ToPaginatedResult(pagination, count);
+    }
+
+    public async Task<PaginatedResult<TaskItemDto>> GetByMentorAsync(int mentorId, PaginationRequest pagination, CancellationToken ct = default)
+    {
+        var filter = new TaskItemFilter(null, null, null, null, mentorId, null);
+        var count = await _repository.CountAsync(filter, ct);
+        var items = await _repository.GetAllDtoAsync(pagination, filter, ct);
+        return items.ToPaginatedResult(pagination, count);
+    }
+
     public async Task<TaskItemDetailDto?> GetByIdAsync(int id, CancellationToken ct = default)
         => await _repository.GetDetailByIdAsync(id, ct);
 
@@ -24,6 +40,19 @@ public class TaskItemService : ITaskItemService
         var entity = request.ToEntity();
         entity.CreatedAt = DateTime.UtcNow;
         await _repository.AddAsync(entity, ct);
+        
+        // Get entity with names
+        var detail = await _repository.GetDetailByIdAsync(entity.TaskId, ct);
+        if (detail is not null)
+        {
+            return new TaskItemDto(
+                detail.TaskId, detail.InternId, detail.InternName,
+                detail.AssignedBy, detail.AssignedByName,
+                detail.ProgramId, detail.ProgramName,
+                detail.Title, detail.Description, detail.DueDate,
+                detail.Priority, detail.Status, detail.CompletionDate,
+                detail.CreatedAt, detail.UpdatedAt);
+        }
         return entity.ToDto();
     }
 
@@ -41,6 +70,19 @@ public class TaskItemService : ITaskItemService
         entity.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(entity, ct);
+        
+        // Get entity with names
+        var detail = await _repository.GetDetailByIdAsync(id, ct);
+        if (detail is not null)
+        {
+            return new TaskItemDto(
+                detail.TaskId, detail.InternId, detail.InternName,
+                detail.AssignedBy, detail.AssignedByName,
+                detail.ProgramId, detail.ProgramName,
+                detail.Title, detail.Description, detail.DueDate,
+                detail.Priority, detail.Status, detail.CompletionDate,
+                detail.CreatedAt, detail.UpdatedAt);
+        }
         return entity.ToDto();
     }
 

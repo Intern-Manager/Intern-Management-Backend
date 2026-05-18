@@ -23,6 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // Internship Tracking
     public DbSet<Mentorship> Mentorships => Set<Mentorship>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<TaskSubmission> TaskSubmissions => Set<TaskSubmission>();
     public DbSet<DailyLog> DailyLogs => Set<DailyLog>();
 
     // Evaluation
@@ -37,6 +38,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<Attendance> Attendance => Set<Attendance>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<Department> Departments => Set<Department>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -60,7 +62,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(u => u.PasswordHash).HasMaxLength(256).IsRequired();
             e.Property(u => u.FullName).HasMaxLength(100).IsRequired();
             e.Property(u => u.Phone).HasMaxLength(20);
-            e.Property(u => u.AvatarUrl).HasMaxLength(1024);
+            e.Property(u => u.AvatarUrl).HasColumnType("nvarchar(max)");
             e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.Status).HasMaxLength(50);
         });
@@ -143,6 +145,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(r => r.Title).HasMaxLength(256).IsRequired();
             e.Property(r => r.Description).HasMaxLength(2048);
             e.Property(r => r.ResourceType).HasMaxLength(50);
+            e.Property(r => r.FileSizeMb).HasPrecision(10, 2);
         });
 
         // Mentorship
@@ -164,6 +167,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(t => t.Status).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<TaskSubmission>(e =>
+        {
+            e.ToTable("TaskSubmissions");
+            e.HasKey(s => s.SubmissionId);
+            e.Property(s => s.Status).HasMaxLength(50);
+            e.Property(s => s.SubmissionText).HasMaxLength(2048);
+            e.Property(s => s.Comments).HasMaxLength(1024);
+            e.Property(s => s.Feedback).HasMaxLength(1024);
+        });
+
         // DailyLog
         modelBuilder.Entity<DailyLog>(e =>
         {
@@ -172,6 +185,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(l => l.ActivityDescription).HasMaxLength(2048);
             e.Property(l => l.ChallengesFaced).HasMaxLength(1024);
             e.Property(l => l.MentorFeedback).HasMaxLength(1024);
+            e.Property(l => l.HoursWorked).HasPrecision(5, 2);
+            e.Property(l => l.KpiScore).HasPrecision(5, 2);
         });
 
         // Assessment
@@ -183,6 +198,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(a => a.Strengths).HasMaxLength(1024);
             e.Property(a => a.AreasForImprovement).HasMaxLength(1024);
             e.Property(a => a.Comments).HasMaxLength(2048);
+            e.Property(a => a.CommunicationScore).HasPrecision(5, 2);
+            e.Property(a => a.OverallRating).HasPrecision(5, 2);
+            e.Property(a => a.SoftSkillsScore).HasPrecision(5, 2);
+            e.Property(a => a.TeamworkScore).HasPrecision(5, 2);
+            e.Property(a => a.TechnicalSkillsScore).HasPrecision(5, 2);
         });
 
         // Feedback
@@ -242,6 +262,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(c => c.CertificateId);
             e.Property(c => c.CertificateName).HasMaxLength(256).IsRequired();
             e.Property(c => c.Description).HasMaxLength(1024);
+        });
+
+        // Department
+        modelBuilder.Entity<Department>(e =>
+        {
+            e.ToTable("Departments");
+            e.HasKey(d => d.DepartmentId);
+            e.Property(d => d.DepartmentName).HasMaxLength(100).IsRequired();
+            e.Property(d => d.Description).HasMaxLength(512);
+            e.Property(d => d.Status).HasMaxLength(50);
         });
     }
 }

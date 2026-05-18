@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using InternManagement.Domain.Entities;
 
 namespace InternManagement.Application.DTOs;
@@ -72,8 +73,9 @@ public record UpdateUserRequest(
     string? Status);
 
 public record UpdateAvatarRequest(
+    [property: JsonPropertyName("base64Image")]
     [Required]
-    string AvatarUrl);
+    string Base64Image);
 
 public record UserFilter(string? Search, string? Status, int? RoleId);
 
