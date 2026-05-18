@@ -75,6 +75,12 @@ public interface ITaskItemRepository : IGenericRepository<TaskItem>
     Task<int> CountAsync(TaskItemFilter? filter = null, CancellationToken ct = default);
 }
 
+public interface ITaskSubmissionRepository : IGenericRepository<TaskSubmission>
+{
+    Task<IEnumerable<TaskSubmissionDto>> GetByTaskIdAsync(int taskId, CancellationToken ct = default);
+    new Task<TaskSubmissionDto?> GetByIdAsync(int id, CancellationToken ct = default);
+}
+
 public interface IDailyLogRepository : IGenericRepository<DailyLog>
 {
     Task<DailyLogDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
@@ -129,4 +135,11 @@ public interface ICertificateRepository : IGenericRepository<Certificate>
     Task<CertificateDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
     Task<IEnumerable<Certificate>> GetAllPagedAsync(PaginationRequest pagination, CertificateFilter? filter = null, CancellationToken ct = default);
     Task<int> CountWithFilterAsync(CertificateFilter? filter = null, CancellationToken ct = default);
+}
+
+public interface IDepartmentRepository : IGenericRepository<Department>
+{
+    Task<DepartmentDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
+    Task<IEnumerable<DepartmentDto>> GetAllDtoAsync(PaginationRequest pagination, DepartmentFilter? filter = null, CancellationToken ct = default);
+    Task<int> CountAsync(DepartmentFilter? filter = null, CancellationToken ct = default);
 }

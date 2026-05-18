@@ -1,33 +1,41 @@
 namespace InternManagement.Application.Auth;
 
-public record LoginRequest(string Email, string Password);
+using System.Text.Json.Serialization;
+
+public record LoginRequest(
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("password")] string Password);
 
 public record RegisterRequest(
-    string FullName,
-    string Email,
-    string Password,
-    int RoleId = 1,
-    string? Phone = null);
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("password")] string Password,
+    [property: JsonPropertyName("roleId")] int RoleId = 1,
+    [property: JsonPropertyName("phone")] string? Phone = null);
 
-public record AuthTokens(string AccessToken, string RefreshToken, DateTime AccessTokenExpiresAt, DateTime RefreshTokenExpiresAt);
+public record AuthTokens(
+    [property: JsonPropertyName("accessToken")] string AccessToken,
+    [property: JsonPropertyName("refreshToken")] string RefreshToken,
+    [property: JsonPropertyName("accessTokenExpiresAt")] DateTime AccessTokenExpiresAt,
+    [property: JsonPropertyName("refreshTokenExpiresAt")] DateTime RefreshTokenExpiresAt);
 
 public record LoginResponse(
-    int UserId,
-    string FullName,
-    string Email,
-    int RoleId,
-    string Status,
-    bool EmailVerified,
-    AuthTokens Tokens);
+    [property: JsonPropertyName("userId")] int UserId,
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("roleId")] int RoleId,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("emailVerified")] bool EmailVerified,
+    [property: JsonPropertyName("tokens")] AuthTokens Tokens);
 
 public record RegisterResponse(
-    int UserId,
-    string FullName,
-    string Email,
-    int RoleId,
-    string Status);
+    [property: JsonPropertyName("userId")] int UserId,
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("roleId")] int RoleId,
+    [property: JsonPropertyName("status")] string Status);
 
-public record LogoutRequest(string RefreshToken);
+public record LogoutRequest([property: JsonPropertyName("refreshToken")] string RefreshToken);
 
-public record RefreshTokenRequest(string RefreshToken);
+public record RefreshTokenRequest([property: JsonPropertyName("refreshToken")] string RefreshToken);
 

@@ -11,14 +11,14 @@ public static class MentorshipEndpoints
         var group = app.MapGroup("/api/mentorships").WithTags("Mentorships");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? status,
             [FromQuery] int? mentorId,
             [FromQuery] int? internId,
             [FromQuery] int? programId,
-            IMentorshipService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IMentorshipService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new MentorshipFilter(status, mentorId, internId, programId);

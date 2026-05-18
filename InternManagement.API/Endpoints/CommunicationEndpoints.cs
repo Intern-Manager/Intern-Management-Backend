@@ -11,13 +11,13 @@ public static class CommunicationEndpoints
         var group = app.MapGroup("/api/communications").WithTags("Communications");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] int? senderId,
             [FromQuery] int? receiverId,
             [FromQuery] bool? isRead,
-            ICommunicationService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            ICommunicationService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new CommunicationFilter(senderId, receiverId, isRead);

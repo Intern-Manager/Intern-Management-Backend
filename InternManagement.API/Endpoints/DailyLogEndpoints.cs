@@ -11,15 +11,15 @@ public static class DailyLogEndpoints
         var group = app.MapGroup("/api/daily-logs").WithTags("DailyLogs");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] int? internId,
             [FromQuery] int? mentorId,
             [FromQuery] DateOnly? fromDate,
             [FromQuery] DateOnly? toDate,
-            IDailyLogService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IDailyLogService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new DailyLogFilter(search, internId, mentorId, fromDate, toDate);

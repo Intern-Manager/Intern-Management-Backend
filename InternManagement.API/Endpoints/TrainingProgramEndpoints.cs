@@ -11,13 +11,13 @@ public static class TrainingProgramEndpoints
         var group = app.MapGroup("/api/training-programs").WithTags("TrainingPrograms");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] string? status,
             [FromQuery] int? coordinatorId,
-            ITrainingProgramService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            ITrainingProgramService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new TrainingProgramFilter(search, status, coordinatorId);

@@ -11,14 +11,14 @@ public static class AttendanceEndpoints
         var group = app.MapGroup("/api/attendance").WithTags("Attendance");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] int? internId,
             [FromQuery] string? status,
             [FromQuery] DateOnly? fromDate,
             [FromQuery] DateOnly? toDate,
-            IAttendanceService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IAttendanceService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new AttendanceFilter(internId, status, fromDate, toDate);

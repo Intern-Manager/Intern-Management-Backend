@@ -88,7 +88,7 @@ public class EfInternshipCampaignRepository : GenericRepository<InternshipCampai
 
     public async Task<InternshipCampaignDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default)
     {
-        var campaign = await _dbSet.Include(c => c.CreatedBy).FirstOrDefaultAsync(c => c.CampaignId == id, ct);
+        var campaign = await _dbSet.FirstOrDefaultAsync(c => c.CampaignId == id, ct);
         if (campaign is null) return null;
 
         var createdByName = await _context.Users
@@ -505,8 +505,13 @@ public class EfTaskItemRepository : GenericRepository<TaskItem>, ITaskItemReposi
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .Select(t => new TaskItemDto(
-                t.TaskId, t.InternId, t.AssignedBy, t.ProgramId, t.Title,
-                t.Description, t.DueDate, t.Priority, t.Status, t.CompletionDate,
+                t.TaskId, t.InternId,
+                _context.Users.Where(u => u.UserId == t.InternId).Select(u => u.FullName).FirstOrDefault(),
+                t.AssignedBy,
+                _context.Users.Where(u => u.UserId == t.AssignedBy).Select(u => u.FullName).FirstOrDefault(),
+                t.ProgramId,
+                t.ProgramId.HasValue ? _context.TrainingPrograms.Where(p => p.ProgramId == t.ProgramId).Select(p => p.ProgramName).FirstOrDefault() : null,
+                t.Title, t.Description, t.DueDate, t.Priority, t.Status, t.CompletionDate,
                 t.CreatedAt, t.UpdatedAt))
             .ToListAsync(ct);
     }
@@ -523,6 +528,40 @@ public class EfTaskItemRepository : GenericRepository<TaskItem>, ITaskItemReposi
             query = query.Where(t => t.InternId == filter.InternId.Value);
 
         return await query.CountAsync(ct);
+    }
+}
+
+public class EfTaskSubmissionRepository : GenericRepository<TaskSubmission>, ITaskSubmissionRepository
+{
+    public EfTaskSubmissionRepository(AppDbContext context) : base(context) { }
+
+    public async Task<IEnumerable<TaskSubmissionDto>> GetByTaskIdAsync(int taskId, CancellationToken ct = default)
+    {
+        return await _dbSet
+            .Where(s => s.TaskId == taskId)
+            .OrderByDescending(s => s.SubmittedAt)
+            .Select(s => new TaskSubmissionDto(
+                s.SubmissionId, s.TaskId,
+                _context.Tasks.Where(t => t.TaskId == s.TaskId).Select(t => t.Title).FirstOrDefault(),
+                s.InternId,
+                _context.Users.Where(u => u.UserId == s.InternId).Select(u => u.FullName).FirstOrDefault(),
+                s.SubmissionUrl, s.SubmissionText, s.Comments, s.Status,
+                s.GradedBy,
+                s.GradedBy.HasValue ? _context.Users.Where(u => u.UserId == s.GradedBy).Select(u => u.FullName).FirstOrDefault() : null,
+                s.Score, s.Feedback,
+                s.SubmittedAt, s.GradedAt))
+            .ToListAsync(ct);
+    }
+
+    public new async Task<TaskSubmissionDto?> GetByIdAsync(int id, CancellationToken ct = default)
+    {
+        var s = await _dbSet.FirstOrDefaultAsync(s => s.SubmissionId == id, ct);
+        if (s is null) return null;
+
+        return s.ToDto(
+            await _context.Tasks.Where(t => t.TaskId == s.TaskId).Select(t => t.Title).FirstOrDefaultAsync(ct),
+            await _context.Users.Where(u => u.UserId == s.InternId).Select(u => u.FullName).FirstOrDefaultAsync(ct),
+            s.GradedBy.HasValue ? await _context.Users.Where(u => u.UserId == s.GradedBy).Select(u => u.FullName).FirstOrDefaultAsync(ct) : null);
     }
 }
 
@@ -948,6 +987,56 @@ public class EfAttendanceRepository : GenericRepository<Attendance>, IAttendance
             query = query.Where(a => a.AttendanceDate >= filter.FromDate.Value);
         if (filter?.ToDate.HasValue == true)
             query = query.Where(a => a.AttendanceDate <= filter.ToDate.Value);
+
+        return await query.CountAsync(ct);
+    }
+}
+
+public class EfDepartmentRepository : GenericRepository<Department>, IDepartmentRepository
+{
+    public EfDepartmentRepository(AppDbContext context) : base(context) { }
+
+    public async Task<DepartmentDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default)
+    {
+        var dept = await _dbSet.FirstOrDefaultAsync(d => d.DepartmentId == id, ct);
+        if (dept is null) return null;
+
+        var headUserName = dept.HeadUserId.HasValue
+            ? await _context.Users.Where(u => u.UserId == dept.HeadUserId).Select(u => u.FullName).FirstOrDefaultAsync(ct)
+            : null;
+
+        return dept.ToDetailDto(headUserName);
+    }
+
+    public async Task<IEnumerable<DepartmentDto>> GetAllDtoAsync(PaginationRequest pagination, DepartmentFilter? filter = null, CancellationToken ct = default)
+    {
+        var query = _dbSet.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter?.Search))
+            query = query.Where(d => d.DepartmentName.Contains(filter.Search) || (d.Description != null && d.Description.Contains(filter.Search)));
+        if (!string.IsNullOrWhiteSpace(filter?.Status))
+            query = query.Where(d => d.Status == filter.Status);
+
+        return await query
+            .OrderByDescending(d => d.CreatedAt)
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(d => new DepartmentDto(
+                d.DepartmentId, d.DepartmentName, d.Description, d.HeadUserId,
+                _context.Users.Where(u => u.UserId == d.HeadUserId).Select(u => u.FullName).FirstOrDefault(),
+                0, 0,
+                d.Status, d.CreatedAt, d.UpdatedAt))
+            .ToListAsync(ct);
+    }
+
+    public async Task<int> CountAsync(DepartmentFilter? filter = null, CancellationToken ct = default)
+    {
+        var query = _dbSet.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter?.Search))
+            query = query.Where(d => d.DepartmentName.Contains(filter.Search) || (d.Description != null && d.Description.Contains(filter.Search)));
+        if (!string.IsNullOrWhiteSpace(filter?.Status))
+            query = query.Where(d => d.Status == filter.Status);
 
         return await query.CountAsync(ct);
     }

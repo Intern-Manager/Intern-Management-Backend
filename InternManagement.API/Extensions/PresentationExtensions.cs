@@ -1,5 +1,7 @@
 using System.Text;
 using InternManagement.API.Endpoints;
+using InternManagement.API.Hubs;
+using InternManagement.API.Services;
 using InternManagement.Application.Auth;
 using InternManagement.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -40,22 +42,46 @@ public static class PresentationExtensions
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key))
                 };
+                // Allow SignalR to receive tokens from query string
+                o.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();
+        services.AddScoped<CloudinaryService>();
+        services.AddSignalR();
+
         return services;
     }
 
     public static WebApplication MapPresentation(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        // Always enable Swagger in development, optionally in other environments
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Intern Management API V1");
+        });
+
+        // Map SignalR hub
+        app.MapHub<NotificationHub>("/hubs/notifications");
 
         // Map all CRUD endpoints
         app.MapAllEndpoints();
+
+        // Upload endpoints (no auth required for public use)
+        app.MapUploadEndpoints();
 
         // Auth endpoints
         var auth = app.MapGroup("/auth");

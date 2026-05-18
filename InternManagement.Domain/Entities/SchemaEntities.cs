@@ -157,6 +157,22 @@ public class TaskItem
     public DateTime? UpdatedAt { get; set; }
 }
 
+public class TaskSubmission
+{
+    public int SubmissionId { get; set; }
+    public int TaskId { get; set; }
+    public int InternId { get; set; }
+    public string? SubmissionUrl { get; set; }
+    public string? SubmissionText { get; set; }
+    public string? Comments { get; set; }
+    public string Status { get; set; } = "Submitted";
+    public int? GradedBy { get; set; }
+    public int? Score { get; set; }
+    public string? Feedback { get; set; }
+    public DateTime SubmittedAt { get; set; }
+    public DateTime? GradedAt { get; set; }
+}
+
 public class DailyLog
 {
     public int LogId { get; set; }
@@ -293,4 +309,15 @@ public class Certificate
     public string? CertificateUrl { get; set; }
     public int IssuedBy { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class Department
+{
+    public int DepartmentId { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int? HeadUserId { get; set; }
+    public string Status { get; set; } = "Active";
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

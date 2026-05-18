@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ILearningResourceService, LearningResourceService>();
         services.AddScoped<IMentorshipService, MentorshipService>();
         services.AddScoped<ITaskItemService, TaskItemService>();
+        services.AddScoped<ITaskSubmissionService, TaskSubmissionService>();
         services.AddScoped<IDailyLogService, DailyLogService>();
         services.AddScoped<IAssessmentService, AssessmentService>();
         services.AddScoped<IFeedbackService, FeedbackService>();
@@ -29,6 +30,10 @@ public static class DependencyInjection
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ICertificateService, CertificateService>();
+        services.AddScoped<IDepartmentService, DepartmentService>();
+
+        // External Services
+        services.AddScoped<IImageUploadService, CloudinaryService>();
 
         return services;
     }

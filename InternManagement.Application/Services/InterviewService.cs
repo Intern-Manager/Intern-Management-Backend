@@ -32,6 +32,9 @@ public class InterviewService : IInterviewService
         var entity = await _repository.GetByIdAsync(id, ct);
         if (entity is null) return null;
 
+        if (request.CampaignId.HasValue) entity.CampaignId = request.CampaignId;
+        if (request.ApplicationId.HasValue) entity.ApplicationId = request.ApplicationId;
+        if (request.InterviewerId.HasValue) entity.InterviewerId = request.InterviewerId.Value;
         if (request.ScheduledTime.HasValue) entity.ScheduledTime = request.ScheduledTime.Value;
         if (request.DurationMinutes.HasValue) entity.DurationMinutes = request.DurationMinutes.Value;
         if (request.InterviewType is not null) entity.InterviewType = request.InterviewType;

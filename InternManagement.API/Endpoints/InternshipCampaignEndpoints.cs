@@ -11,14 +11,14 @@ public static class InternshipCampaignEndpoints
         var group = app.MapGroup("/api/campaigns").WithTags("InternshipCampaigns");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] string? status,
             [FromQuery] string? department,
             [FromQuery] string? location,
-            IInternshipCampaignService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IInternshipCampaignService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new InternshipCampaignFilter(search, status, department, location);

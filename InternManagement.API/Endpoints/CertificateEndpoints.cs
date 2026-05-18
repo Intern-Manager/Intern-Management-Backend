@@ -11,13 +11,13 @@ public static class CertificateEndpoints
         var group = app.MapGroup("/api/certificates").WithTags("Certificates");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] int? internId,
             [FromQuery] int? programId,
-            ICertificateService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            ICertificateService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new CertificateFilter(search, internId, programId);

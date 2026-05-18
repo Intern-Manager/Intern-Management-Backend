@@ -42,5 +42,6 @@ public static class ApiEndpoints
         app.MapReportEndpoints();
         app.MapAttendanceEndpoints();
         app.MapCertificateEndpoints();
+        app.MapDepartmentEndpoints();
     }
 }

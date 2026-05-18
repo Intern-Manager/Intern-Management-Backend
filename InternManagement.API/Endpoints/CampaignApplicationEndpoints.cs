@@ -11,13 +11,13 @@ public static class CampaignApplicationEndpoints
         var group = app.MapGroup("/api/applications").WithTags("CampaignApplications");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] string? status,
             [FromQuery] int? campaignId,
-            ICampaignApplicationService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            ICampaignApplicationService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new CampaignApplicationFilter(search, status, campaignId);

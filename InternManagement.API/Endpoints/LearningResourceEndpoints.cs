@@ -11,13 +11,13 @@ public static class LearningResourceEndpoints
         var group = app.MapGroup("/api/learning-resources").WithTags("LearningResources");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? search,
             [FromQuery] string? resourceType,
             [FromQuery] int? programId,
-            ILearningResourceService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            ILearningResourceService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new LearningResourceFilter(search, resourceType, programId);

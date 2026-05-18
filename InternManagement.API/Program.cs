@@ -3,6 +3,7 @@ using InternManagement.Application;
 using InternManagement.Infrastructure;
 using InternManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,9 +28,9 @@ app.UseAuthorization();
 
 app.MapPresentation();
 
-var url = app.Urls.FirstOrDefault() ?? "http://localhost:5131";
+var displayUrl = app.Urls.FirstOrDefault(u => u.StartsWith("https")) ?? app.Urls.FirstOrDefault() ?? "https://localhost:5131";
 Console.WriteLine();
-Console.WriteLine("  Swagger UI: " + url + "/swagger");
+Console.WriteLine("  Swagger UI: " + displayUrl + "/swagger");
 Console.WriteLine();
 
 app.Run();

@@ -11,15 +11,15 @@ public static class FeedbackEndpoints
         var group = app.MapGroup("/api/feedbacks").WithTags("Feedbacks");
 
         group.MapGet("/", async (
-            [FromQuery] int page,
-            [FromQuery] int pageSize,
             [FromQuery] string? feedbackType,
             [FromQuery] int? internId,
             [FromQuery] bool? isAnonymous,
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate,
-            IFeedbackService service,
-            CancellationToken ct) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            IFeedbackService service = null!,
+            CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
             var filter = new FeedbackFilter(feedbackType, internId, isAnonymous, fromDate, toDate);

@@ -53,6 +53,9 @@ public record CreateInterviewRequest(
     int? Rating);
 
 public record UpdateInterviewRequest(
+    int? CampaignId,
+    int? ApplicationId,
+    int? InterviewerId,
     DateTime? ScheduledTime,
     int? DurationMinutes,
     string? InterviewType,
