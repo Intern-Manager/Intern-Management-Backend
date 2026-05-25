@@ -1,5 +1,6 @@
 using InternManagement.Application.DTOs;
 using InternManagement.Application.Repositories;
+using InternManagement.Domain.Entities;
 
 namespace InternManagement.Application.Services;
 
@@ -16,10 +17,24 @@ public class InternProfileService : IInternProfileService
         return items.ToPaginatedResult(pagination, count);
     }
 
-    public async Task<InternProfileDetailDto?> GetByIdAsync(int id, CancellationToken ct = default)
-        => await _repository.GetDetailByIdAsync(id, ct);
+    public async Task<InternProfileDetailDto?> GetByIdAsync(int userId, CancellationToken ct = default)
+    {
+        var profile = await _repository.GetDetailByIdAsync(userId, ct);
+        if (profile is not null) return profile;
 
-    public async Task<InternProfileDto?> CreateAsync(int userId, CreateInternProfileRequest request, CancellationToken ct = default)
+        // Auto-create empty InternProfile if not exists
+        var newProfile = new InternProfile
+        {
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _repository.AddAsync(newProfile, ct);
+
+        // Return the newly created profile with user info
+        return await _repository.GetDetailByIdAsync(userId, ct);
+    }
+
+    public async Task<InternProfileDto?> CreateAsync(CreateInternProfileRequest request, CancellationToken ct = default)
     {
         var entity = request.ToEntity();
         entity.CreatedAt = DateTime.UtcNow;
@@ -27,9 +42,9 @@ public class InternProfileService : IInternProfileService
         return entity.ToDto();
     }
 
-    public async Task<InternProfileDto?> UpdateAsync(int id, UpdateInternProfileRequest request, CancellationToken ct = default)
+    public async Task<InternProfileDto?> UpdateAsync(int userId, UpdateInternProfileRequest request, CancellationToken ct = default)
     {
-        var entity = await _repository.GetByIdAsync(id, ct);
+        var entity = await _repository.GetByUserIdAsync(userId, ct);
         if (entity is null) return null;
 
         if (request.DateOfBirth.HasValue) entity.DateOfBirth = request.DateOfBirth;

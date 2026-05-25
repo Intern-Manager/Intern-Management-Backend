@@ -103,7 +103,7 @@ public static class TaskItemDtoExtensions
     {
         InternId = dto.InternId, AssignedBy = dto.AssignedBy, ProgramId = dto.ProgramId,
         Title = dto.Title, Description = dto.Description, DueDate = dto.DueDate,
-        Priority = dto.Priority, Status = dto.Status
+        Priority = dto.Priority ?? "Medium", Status = dto.Status ?? "Pending"
     };
 
     public static TaskSubmissionDto ToDto(this TaskSubmission entity, string? taskTitle = null, string? internName = null, string? gradedByName = null) => new(

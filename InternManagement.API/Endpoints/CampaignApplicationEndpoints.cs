@@ -14,13 +14,14 @@ public static class CampaignApplicationEndpoints
             [FromQuery] string? search,
             [FromQuery] string? status,
             [FromQuery] int? campaignId,
+            [FromQuery] string? applicantEmail,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             ICampaignApplicationService service = null!,
             CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
-            var filter = new CampaignApplicationFilter(search, status, campaignId);
+            var filter = new CampaignApplicationFilter(search, status, campaignId, applicantEmail);
             return await service.GetAllAsync(pagination, filter, ct);
         });
 

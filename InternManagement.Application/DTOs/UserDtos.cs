@@ -77,6 +77,17 @@ public record UpdateAvatarRequest(
     [Required]
     string Base64Image);
 
+public record ChatContactDto(
+    int UserId,
+    string UserName,
+    string Email,
+    string? AvatarUrl,
+    int RoleId,
+    string? RoleName,
+    string? LastMessage,
+    DateTime? LastMessageTime,
+    int UnreadCount);
+
 public record UserFilter(string? Search, string? Status, int? RoleId);
 
 public static class UserDtoExtensions

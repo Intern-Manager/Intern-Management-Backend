@@ -39,6 +39,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Attendance> Attendance => Set<Attendance>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<Department> Departments => Set<Department>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,6 +87,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(p => p.CvUrl).HasMaxLength(1024);
             e.Property(p => p.LinkedinUrl).HasMaxLength(256);
             e.Property(p => p.GithubUrl).HasMaxLength(256);
+            e.HasIndex(p => p.UserId).IsUnique();
+            e.HasOne(p => p.User)
+                .WithOne()
+                .HasForeignKey<InternProfile>(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // InternshipCampaign
@@ -272,6 +278,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(d => d.DepartmentName).HasMaxLength(100).IsRequired();
             e.Property(d => d.Description).HasMaxLength(512);
             e.Property(d => d.Status).HasMaxLength(50);
+        });
+
+        // AuditLog
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.ToTable("AuditLogs");
+            e.HasKey(a => a.AuditLogId);
+            e.Property(a => a.Action).HasMaxLength(100).IsRequired();
+            e.Property(a => a.EntityType).HasMaxLength(100);
+            e.Property(a => a.Description).HasMaxLength(1024);
+            e.Property(a => a.IpAddress).HasMaxLength(50);
+            e.Property(a => a.LogType).HasMaxLength(50);
         });
     }
 }

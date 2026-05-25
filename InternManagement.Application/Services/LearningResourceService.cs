@@ -19,8 +19,12 @@ public class LearningResourceService : ILearningResourceService
     public async Task<LearningResourceDetailDto?> GetByIdAsync(int id, CancellationToken ct = default)
         => await _repository.GetDetailByIdAsync(id, ct);
 
-    public async Task<LearningResourceDto?> CreateAsync(CreateLearningResourceRequest request, CancellationToken ct = default)
-        => throw new NotImplementedException("CreateAsync requires uploadedBy parameter");
+    public async Task<LearningResourceDto?> CreateAsync(CreateLearningResourceRequest request, int uploadedBy, CancellationToken ct = default)
+    {
+        var entity = request.ToEntity(uploadedBy);
+        await _repository.AddAsync(entity, ct);
+        return entity.ToDto();
+    }
 
     public async Task<LearningResourceDto?> UpdateAsync(int id, UpdateLearningResourceRequest request, CancellationToken ct = default)
     {

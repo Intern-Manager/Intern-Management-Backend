@@ -32,7 +32,7 @@ public static class InternProfileEndpoints
         });
 
         group.MapPost("/", async (CreateInternProfileRequest request, IInternProfileService service, CancellationToken ct) =>
-            Results.Created("", await service.CreateAsync(0, request, ct)));
+            Results.Created("", await service.CreateAsync(request, ct)));
 
         group.MapPut("/{id:int}", async (int id, UpdateInternProfileRequest request, IInternProfileService service, CancellationToken ct) =>
         {

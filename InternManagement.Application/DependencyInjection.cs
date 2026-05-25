@@ -33,7 +33,10 @@ public static class DependencyInjection
         services.AddScoped<IDepartmentService, DepartmentService>();
 
         // External Services
-        services.AddScoped<IImageUploadService, CloudinaryService>();
+        services.AddScoped<IImageUploadService, CloudinaryUploadService>();
+
+        // Audit Log Service
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         return services;
     }

@@ -43,5 +43,9 @@ public static class ApiEndpoints
         app.MapAttendanceEndpoints();
         app.MapCertificateEndpoints();
         app.MapDepartmentEndpoints();
+
+        // External Integrations
+        app.MapCalendarEndpoints();
+        app.MapZoomEndpoints();
     }
 }

@@ -24,7 +24,8 @@ public class AttendanceService : IAttendanceService
         var entity = request.ToEntity();
         entity.CreatedAt = DateTime.UtcNow;
         await _repository.AddAsync(entity, ct);
-        return entity.ToDto();
+        var user = await _repository.GetUserNameAsync(request.InternId, ct);
+        return entity.ToDto(user);
     }
 
     public async Task<AttendanceDto?> UpdateAsync(int id, UpdateAttendanceRequest request, CancellationToken ct = default)
@@ -39,7 +40,8 @@ public class AttendanceService : IAttendanceService
         if (request.ApprovedBy.HasValue) entity.ApprovedBy = request.ApprovedBy;
 
         await _repository.UpdateAsync(entity, ct);
-        return entity.ToDto();
+        var user = await _repository.GetUserNameAsync(entity.InternId, ct);
+        return entity.ToDto(user);
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)

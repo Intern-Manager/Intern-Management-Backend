@@ -68,4 +68,32 @@ public class EfUserRepository : GenericRepository<User>,
 
         return await query.CountAsync(ct);
     }
+
+    public async Task<IEnumerable<ChatContactDto>> GetChatContactsAsync(int currentUserId, CancellationToken ct = default)
+    {
+        var users = await DbSet
+            .AsNoTracking()
+            .Where(u => u.UserId != currentUserId && u.Status == "Active")
+            .OrderBy(u => u.FullName)
+            .Select(u => new {
+                u.UserId,
+                u.FullName,
+                u.Email,
+                u.AvatarUrl,
+                u.RoleId,
+                LastMessage = (string?)null,
+                LastMessageTime = (DateTime?)null,
+                UnreadCount = 0
+            })
+            .ToListAsync(ct);
+
+        var roles = await _context.Roles
+            .AsNoTracking()
+            .ToDictionaryAsync(r => r.RoleId);
+
+        return users.Select(u => new ChatContactDto(
+            u.UserId, u.FullName, u.Email, u.AvatarUrl, u.RoleId,
+            roles.TryGetValue(u.RoleId, out var r) ? r.RoleName : null,
+            u.LastMessage, u.LastMessageTime, u.UnreadCount));
+    }
 }

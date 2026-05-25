@@ -10,12 +10,13 @@ public static class UploadEndpoints
         var group = app.MapGroup("/api/uploads").WithTags("Uploads");
 
         group.MapPost("/file", UploadFile).DisableAntiforgery();
+        group.MapGet("/proxy", ProxyFile).WithTags("Uploads-Proxy");
     }
 
     private static async Task<IResult> UploadFile(
         IFormFile file,
         [FromQuery] string folder,
-        CloudinaryService cloudinary,
+        [FromServices] CloudinaryService cloudinary,
         CancellationToken ct)
     {
         if (file == null || file.Length == 0)
@@ -39,6 +40,30 @@ public static class UploadEndpoints
         catch (Exception ex)
         {
             return Results.BadRequest(new { message = $"Upload failed: {ex.Message}" });
+        }
+    }
+
+    private static async Task<IResult> ProxyFile(
+        [FromQuery] string url,
+        [FromServices] CloudinaryService cloudinary,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return Results.BadRequest(new { message = "URL is required" });
+
+        try
+        {
+            var result = await cloudinary.DownloadFileAsync(url, ct);
+            if (result == null)
+                return Results.BadRequest(new { message = "Failed to fetch file from URL" });
+
+            var (bytes, contentType, fileName) = result.Value;
+
+            return Results.File(bytes, contentType, fileName);
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { message = $"Proxy failed: {ex.Message}" });
         }
     }
 }

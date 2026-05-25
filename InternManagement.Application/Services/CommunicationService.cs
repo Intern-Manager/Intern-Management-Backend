@@ -45,4 +45,50 @@ public class CommunicationService : ICommunicationService
         await _repository.DeleteAsync(id, ct);
         return true;
     }
+
+    public async Task<IEnumerable<ChatContactDto>> GetConversationsAsync(int userId, CancellationToken ct = default)
+    {
+        return await _repository.GetConversationsAsync(userId, ct);
+    }
+
+    public async Task<PaginatedResult<CommunicationDto>> GetConversationMessagesAsync(int currentUserId, int otherUserId, PaginationRequest pagination, CancellationToken ct = default)
+    {
+        var items = await _repository.GetMessagesBetweenUsersAsync(currentUserId, otherUserId, pagination, ct);
+        var list = items.ToList();
+        return list.ToPaginatedResult(pagination, list.Count);
+    }
+
+    public async Task<int> GetUnreadCountAsync(int userId, CancellationToken ct = default)
+    {
+        var filter = new CommunicationFilter(null, userId, false);
+        return await _repository.CountAsync(filter, ct);
+    }
+
+    public async Task MarkAsReadAsync(int senderId, int receiverId, CancellationToken ct = default)
+    {
+        await _repository.MarkAllAsReadAsync(senderId, receiverId, ct);
+    }
+
+    public async Task<PaginatedResult<CommunicationDto>> GetMyMessagesAsync(int currentUserId, int? otherUserId, PaginationRequest pagination, CancellationToken ct = default)
+    {
+        var allItems = await _repository.GetAllDtoAsync(new PaginationRequest(1, 1000), null, ct);
+
+        IEnumerable<CommunicationDto> query = allItems
+            .Where(m => m.SenderId == currentUserId || m.ReceiverId == currentUserId);
+
+        if (otherUserId.HasValue)
+            query = query.Where(m => m.SenderId == otherUserId.Value || m.ReceiverId == otherUserId.Value);
+
+        var filtered = query
+            .OrderBy(m => m.SentAt)
+            .ToList();
+
+        var total = filtered.Count;
+        var paged = filtered
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .ToList();
+
+        return paged.ToPaginatedResult(pagination, total);
+    }
 }

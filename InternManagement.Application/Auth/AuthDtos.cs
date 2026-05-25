@@ -39,3 +39,11 @@ public record LogoutRequest([property: JsonPropertyName("refreshToken")] string 
 
 public record RefreshTokenRequest([property: JsonPropertyName("refreshToken")] string RefreshToken);
 
+public record ForgotPasswordRequest([property: JsonPropertyName("email")] string Email);
+
+public record ResetPasswordRequest(
+    [property: JsonPropertyName("token")] string Token,
+    [property: JsonPropertyName("newPassword")] string NewPassword);
+
+public record VerifyEmailRequest([property: JsonPropertyName("token")] string Token);
+

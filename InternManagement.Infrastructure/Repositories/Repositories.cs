@@ -15,15 +15,17 @@ public class EfInternProfileRepository : GenericRepository<InternProfile>, IInte
 
     public async Task<InternProfileDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default)
     {
-        var profile = await _dbSet.FirstOrDefaultAsync(p => p.InternId == id, ct);
+        var profile = await _dbSet.FirstOrDefaultAsync(p => p.UserId == id, ct);
         if (profile is null) return null;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id, ct);
 
         return new InternProfileDetailDto(
             profile.InternId,
+            profile.UserId,
             user?.FullName ?? "",
             user?.Email ?? "",
+            user?.Phone,
             profile.DateOfBirth,
             profile.Address,
             profile.University,
@@ -37,6 +39,11 @@ public class EfInternProfileRepository : GenericRepository<InternProfile>, IInte
             profile.GithubUrl,
             profile.CreatedAt,
             profile.UpdatedAt);
+    }
+
+    public async Task<InternProfile?> GetByUserIdAsync(int userId, CancellationToken ct = default)
+    {
+        return await _dbSet.FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 
     public async Task<IEnumerable<InternProfileDto>> GetAllDtoAsync(PaginationRequest pagination, InternProfileFilter? filter = null, CancellationToken ct = default)
@@ -58,7 +65,7 @@ public class EfInternProfileRepository : GenericRepository<InternProfile>, IInte
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .Select(p => new InternProfileDto(
-                p.InternId, p.DateOfBirth, p.Address, p.University, p.Major,
+                p.InternId, p.UserId, p.DateOfBirth, p.Address, p.University, p.Major,
                 p.GraduationYear, p.EducationalBackground, p.WorkHistory, p.Skills,
                 p.CvUrl, p.LinkedinUrl, p.GithubUrl, p.CreatedAt, p.UpdatedAt))
             .ToListAsync(ct);
@@ -179,13 +186,17 @@ public class EfCampaignApplicationRepository : GenericRepository<CampaignApplica
             query = query.Where(a => a.Status == filter.Status);
         if (filter?.CampaignId.HasValue == true)
             query = query.Where(a => a.CampaignId == filter.CampaignId.Value);
+        if (!string.IsNullOrWhiteSpace(filter?.ApplicantEmail))
+            query = query.Where(a => a.ApplicantEmail == filter.ApplicantEmail);
 
         return await query
             .OrderByDescending(a => a.AppliedDate)
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .Select(a => new CampaignApplicationDto(
-                a.ApplicationId, a.CampaignId, a.ApplicantEmail, a.ApplicantName,
+                a.ApplicationId, a.CampaignId,
+                _context.Set<InternshipCampaign>().Where(c => c.CampaignId == a.CampaignId).Select(c => c.Title).FirstOrDefault(),
+                a.ApplicantEmail, a.ApplicantName,
                 a.ApplicantPhone, a.CvUrl, a.CoverLetter, a.Status, a.AppliedDate,
                 a.ReviewedBy, a.ReviewedDate, a.Notes))
             .ToListAsync(ct);
@@ -201,6 +212,8 @@ public class EfCampaignApplicationRepository : GenericRepository<CampaignApplica
             query = query.Where(a => a.Status == filter.Status);
         if (filter?.CampaignId.HasValue == true)
             query = query.Where(a => a.CampaignId == filter.CampaignId.Value);
+        if (!string.IsNullOrWhiteSpace(filter?.ApplicantEmail))
+            query = query.Where(a => a.ApplicantEmail == filter.ApplicantEmail);
 
         return await query.CountAsync(ct);
     }
@@ -246,6 +259,8 @@ public class EfInterviewRepository : GenericRepository<Interview>, IInterviewRep
             query = query.Where(i => i.InternId == filter.InternId.Value);
         if (filter?.InterviewerId.HasValue == true)
             query = query.Where(i => i.InterviewerId == filter.InterviewerId.Value);
+        if (filter?.InternId.HasValue == true)
+            query = query.Where(i => i.InternId == filter.InternId.Value);
         if (filter?.FromDate.HasValue == true)
             query = query.Where(i => i.ScheduledTime >= filter.FromDate.Value);
         if (filter?.ToDate.HasValue == true)
@@ -256,8 +271,15 @@ public class EfInterviewRepository : GenericRepository<Interview>, IInterviewRep
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .Select(i => new InterviewDto(
-                i.InterviewId, i.CampaignId, i.ApplicationId, i.InternId,
-                i.InterviewerId, i.ScheduledTime, i.DurationMinutes, i.InterviewType,
+                i.InterviewId, i.CampaignId,
+                _context.Set<InternshipCampaign>().Where(c => c.CampaignId == i.CampaignId).Select(c => c.Title).FirstOrDefault(),
+                i.ApplicationId,
+                _context.Set<CampaignApplication>().Where(a => a.ApplicationId == i.ApplicationId).Select(a => a.ApplicantEmail).FirstOrDefault(),
+                _context.Set<CampaignApplication>().Where(a => a.ApplicationId == i.ApplicationId).Select(a => a.ApplicantName).FirstOrDefault(),
+                i.InternId,
+                i.InterviewerId,
+                _context.Users.Where(u => u.UserId == i.InterviewerId).Select(u => u.FullName).FirstOrDefault(),
+                i.ScheduledTime, i.DurationMinutes, i.InterviewType,
                 i.MeetingLink, i.Location, i.Status, i.Feedback, i.Rating,
                 i.CreatedAt, i.UpdatedAt))
             .ToListAsync(ct);
@@ -271,10 +293,21 @@ public class EfInterviewRepository : GenericRepository<Interview>, IInterviewRep
             query = query.Where(i => i.Status == filter.Status);
         if (filter?.CampaignId.HasValue == true)
             query = query.Where(i => i.CampaignId == filter.CampaignId.Value);
+        if (filter?.InternId.HasValue == true)
+            query = query.Where(i => i.InternId == filter.InternId.Value);
+        if (filter?.InterviewerId.HasValue == true)
+            query = query.Where(i => i.InterviewerId == filter.InterviewerId.Value);
         if (filter?.FromDate.HasValue == true)
             query = query.Where(i => i.ScheduledTime >= filter.FromDate.Value);
         if (filter?.ToDate.HasValue == true)
             query = query.Where(i => i.ScheduledTime <= filter.ToDate.Value);
+        if (!string.IsNullOrWhiteSpace(filter?.ApplicantEmail))
+        {
+            var appIds = _context.Set<CampaignApplication>()
+                .Where(a => a.ApplicantEmail == filter.ApplicantEmail)
+                .Select(a => a.ApplicationId);
+            query = query.Where(i => i.ApplicationId.HasValue && appIds.Contains(i.ApplicationId.Value));
+        }
 
         return await query.CountAsync(ct);
     }
@@ -421,7 +454,11 @@ public class EfMentorshipRepository : GenericRepository<Mentorship>, IMentorship
 
     public async Task<IEnumerable<MentorshipDto>> GetAllDtoAsync(PaginationRequest pagination, MentorshipFilter? filter = null, CancellationToken ct = default)
     {
-        var query = _dbSet.AsQueryable();
+        var query = _dbSet
+            .Include(m => m.Mentor)
+            .Include(m => m.Intern)
+            .Include(m => m.Program)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter?.Status))
             query = query.Where(m => m.Status == filter.Status);
@@ -437,7 +474,9 @@ public class EfMentorshipRepository : GenericRepository<Mentorship>, IMentorship
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .Select(m => new MentorshipDto(
-                m.MentorshipId, m.MentorId, m.InternId, m.ProgramId,
+                m.MentorshipId, m.MentorId, m.Mentor!.FullName,
+                m.InternId, m.Intern!.FullName,
+                m.ProgramId, m.Program!.ProgramName,
                 m.StartDate, m.EndDate, m.Status, m.CreatedAt))
             .ToListAsync(ct);
     }
@@ -820,6 +859,85 @@ public class EfCommunicationRepository : GenericRepository<Communication>, IComm
 
         return await query.CountAsync(ct);
     }
+
+    public async Task<IEnumerable<ChatContactDto>> GetConversationsAsync(int userId, CancellationToken ct = default)
+    {
+        var allMessages = _dbSet
+            .Where(c => c.SenderId == userId || c.ReceiverId == userId)
+            .GroupBy(c => c.SenderId == userId ? c.ReceiverId : c.SenderId)
+            .Select(g => new {
+                UserId = g.Key,
+                LastMessage = g.OrderByDescending(c => c.SentAt).Select(c => c.MessageContent).FirstOrDefault()!,
+                LastMessageTime = g.Max(c => c.SentAt),
+                UnreadCount = g.Count(c =>
+                    c.ReceiverId == userId && !c.IsRead)
+            })
+            .ToList();
+
+        var userIds = allMessages.Select(x => x.UserId).ToList();
+        var users = await _context.Users
+            .Where(u => userIds.Contains(u.UserId))
+            .Select(u => new { u.UserId, u.FullName, u.Email, u.AvatarUrl, u.RoleId })
+            .ToListAsync(ct);
+
+        var roles = await _context.Roles.ToDictionaryAsync(r => r.RoleId);
+
+        return allMessages.Select(x => {
+            var user = users.FirstOrDefault(u => u.UserId == x.UserId);
+            return new ChatContactDto(
+                x.UserId,
+                user?.FullName ?? "Unknown",
+                user?.Email ?? "",
+                user?.AvatarUrl,
+                user?.RoleId ?? 0,
+                user != null && roles.TryGetValue(user.RoleId, out var role) ? role.RoleName : null,
+                x.LastMessage,
+                x.LastMessageTime,
+                x.UnreadCount);
+        }).OrderByDescending(x => x.LastMessageTime);
+    }
+
+    public async Task<IEnumerable<CommunicationDto>> GetMessagesBetweenUsersAsync(int? userId, int otherUserId, PaginationRequest pagination, CancellationToken ct = default)
+    {
+        var query = _dbSet.AsQueryable();
+
+        if (userId.HasValue)
+        {
+            query = query.Where(c =>
+                (c.SenderId == userId.Value && c.ReceiverId == otherUserId) ||
+                (c.SenderId == otherUserId && c.ReceiverId == userId.Value));
+        }
+        else
+        {
+            query = query.Where(c =>
+                c.SenderId == otherUserId || c.ReceiverId == otherUserId);
+        }
+
+        return await query
+            .OrderByDescending(c => c.SentAt)
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(c => new CommunicationDto(
+                c.MessageId, c.SenderId, c.ReceiverId, c.Subject,
+                c.MessageContent, c.IsRead, c.ParentMessageId,
+                c.SentAt, c.ReadAt))
+            .ToListAsync(ct);
+    }
+
+    public async Task MarkAllAsReadAsync(int senderId, int receiverId, CancellationToken ct = default)
+    {
+        var unread = await _dbSet
+            .Where(c => c.SenderId == senderId && c.ReceiverId == receiverId && !c.IsRead)
+            .ToListAsync(ct);
+
+        foreach (var msg in unread)
+        {
+            msg.IsRead = true;
+            msg.ReadAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(ct);
+    }
 }
 
 public class EfNotificationRepository : GenericRepository<Notification>, INotificationRepository
@@ -964,15 +1082,22 @@ public class EfAttendanceRepository : GenericRepository<Attendance>, IAttendance
         if (filter?.ToDate.HasValue == true)
             query = query.Where(a => a.AttendanceDate <= filter.ToDate.Value);
 
-        return await query
+        var results = await query
             .OrderByDescending(a => a.AttendanceDate)
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
-            .Select(a => new AttendanceDto(
-                a.AttendanceId, a.InternId, a.AttendanceDate,
-                a.CheckInTime, a.CheckOutTime, a.Status,
-                a.Notes, a.ApprovedBy, a.CreatedAt))
             .ToListAsync(ct);
+
+        var userIds = results.Select(a => a.InternId).Distinct().ToList();
+        var users = await _context.Users
+            .Where(u => userIds.Contains(u.UserId))
+            .ToDictionaryAsync(u => u.UserId, u => u.FullName, ct);
+
+        return results.Select(a => new AttendanceDto(
+            a.AttendanceId, a.InternId,
+            users.GetValueOrDefault(a.InternId) ?? $"Intern {a.InternId}",
+            a.AttendanceDate, a.CheckInTime, a.CheckOutTime, a.Status,
+            a.Notes, a.ApprovedBy, a.CreatedAt));
     }
 
     public async Task<int> CountAsync(AttendanceFilter? filter = null, CancellationToken ct = default)
@@ -989,6 +1114,11 @@ public class EfAttendanceRepository : GenericRepository<Attendance>, IAttendance
             query = query.Where(a => a.AttendanceDate <= filter.ToDate.Value);
 
         return await query.CountAsync(ct);
+    }
+
+    public async Task<string?> GetUserNameAsync(int userId, CancellationToken ct = default)
+    {
+        return await _context.Users.Where(u => u.UserId == userId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
     }
 }
 

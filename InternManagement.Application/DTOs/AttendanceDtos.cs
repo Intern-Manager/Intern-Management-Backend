@@ -5,6 +5,7 @@ namespace InternManagement.Application.DTOs;
 public record AttendanceDto(
     int AttendanceId,
     int InternId,
+    string InternName,
     DateOnly AttendanceDate,
     TimeOnly? CheckInTime,
     TimeOnly? CheckOutTime,
@@ -49,8 +50,8 @@ public record AttendanceFilter(
 
 public static class AttendanceDtoExtensions
 {
-    public static AttendanceDto ToDto(this Attendance entity) => new(
-        entity.AttendanceId, entity.InternId, entity.AttendanceDate, entity.CheckInTime,
+    public static AttendanceDto ToDto(this Attendance entity, string? internName) => new(
+        entity.AttendanceId, entity.InternId, internName ?? $"Intern {entity.InternId}", entity.AttendanceDate, entity.CheckInTime,
         entity.CheckOutTime, entity.Status, entity.Notes, entity.ApprovedBy, entity.CreatedAt);
 
     public static Attendance ToEntity(this CreateAttendanceRequest dto) => new()

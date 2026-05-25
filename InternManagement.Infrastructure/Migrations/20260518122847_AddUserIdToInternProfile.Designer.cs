@@ -4,6 +4,7 @@ using InternManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518122847_AddUserIdToInternProfile")]
+    partial class AddUserIdToInternProfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,54 +128,6 @@ namespace InternManagement.Infrastructure.Migrations
                     b.HasKey("AttendanceId");
 
                     b.ToTable("Attendance", (string)null);
-                });
-
-            modelBuilder.Entity("InternManagement.Domain.Entities.AuditLog", b =>
-                {
-                    b.Property<int>("AuditLogId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuditLogId"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<int?>("EntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("LogType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("AuditLogId");
-
-                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("InternManagement.Domain.Entities.CampaignApplication", b =>
@@ -462,12 +417,6 @@ namespace InternManagement.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("GoogleRefreshToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("GoogleTokenExpiry")
-                        .HasColumnType("datetime2");
-
                     b.Property<int?>("GraduationYear")
                         .HasColumnType("int");
 
@@ -699,12 +648,6 @@ namespace InternManagement.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("MentorshipId");
-
-                    b.HasIndex("InternId");
-
-                    b.HasIndex("MentorId");
-
-                    b.HasIndex("ProgramId");
 
                     b.ToTable("Mentorships", (string)null);
                 });
@@ -1095,33 +1038,6 @@ namespace InternManagement.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("InternManagement.Domain.Entities.Mentorship", b =>
-                {
-                    b.HasOne("InternManagement.Domain.Entities.User", "Intern")
-                        .WithMany()
-                        .HasForeignKey("InternId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("InternManagement.Domain.Entities.User", "Mentor")
-                        .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("InternManagement.Domain.Entities.TrainingProgram", "Program")
-                        .WithMany()
-                        .HasForeignKey("ProgramId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Intern");
-
-                    b.Navigation("Mentor");
-
-                    b.Navigation("Program");
                 });
 #pragma warning restore 612, 618
         }
