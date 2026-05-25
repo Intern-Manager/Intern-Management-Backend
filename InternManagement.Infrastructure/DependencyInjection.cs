@@ -1,8 +1,10 @@
 using InternManagement.Application.Auth;
 using InternManagement.Application.Repositories;
+using InternManagement.Application.Services;
 using InternManagement.Infrastructure.Auth;
 using InternManagement.Infrastructure.Persistence;
 using InternManagement.Infrastructure.Repositories;
+using InternManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -52,8 +54,14 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceRepository, EfAttendanceRepository>();
         services.AddScoped<ICertificateRepository, CertificateRepository>();
         services.AddScoped<IDepartmentRepository, EfDepartmentRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+
+        // External Services
+        services.AddSingleton<IEmailService, SendGridEmailService>();
+        services.AddScoped<ICalendarService, GoogleCalendarService>();
+        services.AddScoped<IZoomService, ZoomService>();
 
         return services;
     }

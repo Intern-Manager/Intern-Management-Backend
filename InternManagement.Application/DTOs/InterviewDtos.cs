@@ -5,9 +5,13 @@ namespace InternManagement.Application.DTOs;
 public record InterviewDto(
     int InterviewId,
     int? CampaignId,
+    string? CampaignTitle,
     int? ApplicationId,
+    string? ApplicantEmail,
+    string? ApplicantName,
     int? InternId,
     int InterviewerId,
+    string? InterviewerName,
     DateTime ScheduledTime,
     int DurationMinutes,
     string InterviewType,
@@ -50,7 +54,8 @@ public record CreateInterviewRequest(
     string? MeetingLink,
     string? Location,
     string? Feedback,
-    int? Rating);
+    int? Rating,
+    bool CreateZoomMeeting = false);
 
 public record UpdateInterviewRequest(
     int? CampaignId,
@@ -72,13 +77,16 @@ public record InterviewFilter(
     int? InternId,
     int? InterviewerId,
     DateTime? FromDate,
-    DateTime? ToDate);
+    DateTime? ToDate,
+    string? ApplicantEmail);
 
 public static class InterviewDtoExtensions
 {
-    public static InterviewDto ToDto(this Interview entity) => new(
-        entity.InterviewId, entity.CampaignId, entity.ApplicationId, entity.InternId,
-        entity.InterviewerId, entity.ScheduledTime, entity.DurationMinutes, entity.InterviewType,
+    public static InterviewDto ToDto(this Interview entity, string? campaignTitle = null, string? applicantEmail = null, string? applicantName = null, string? interviewerName = null) => new(
+        entity.InterviewId, entity.CampaignId, campaignTitle,
+        entity.ApplicationId, applicantEmail, applicantName,
+        entity.InternId, entity.InterviewerId, interviewerName,
+        entity.ScheduledTime, entity.DurationMinutes, entity.InterviewType,
         entity.MeetingLink, entity.Location, entity.Status, entity.Feedback, entity.Rating,
         entity.CreatedAt, entity.UpdatedAt);
 

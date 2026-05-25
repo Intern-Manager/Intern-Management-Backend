@@ -15,18 +15,20 @@ public interface IUserService
 {
     Task<PaginatedResult<UserDto>> GetAllAsync(PaginationRequest pagination, UserFilter? filter = null, CancellationToken ct = default);
     Task<UserDetailDto?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<UserDetailDto?> GetByEmailAsync(string email, CancellationToken ct = default);
     Task<UserDto?> CreateAsync(CreateUserRequest request, CancellationToken ct = default);
     Task<UserDto?> UpdateAsync(int id, UpdateUserRequest request, CancellationToken ct = default);
     Task<bool> UpdateAvatarAsync(int id, string avatarUrl, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+    Task<IEnumerable<ChatContactDto>> GetChatContactsAsync(int currentUserId, CancellationToken ct = default);
 }
 
 public interface IInternProfileService
 {
     Task<PaginatedResult<InternProfileDto>> GetAllAsync(PaginationRequest pagination, InternProfileFilter? filter = null, CancellationToken ct = default);
-    Task<InternProfileDetailDto?> GetByIdAsync(int id, CancellationToken ct = default);
-    Task<InternProfileDto?> CreateAsync(int userId, CreateInternProfileRequest request, CancellationToken ct = default);
-    Task<InternProfileDto?> UpdateAsync(int id, UpdateInternProfileRequest request, CancellationToken ct = default);
+    Task<InternProfileDetailDto?> GetByIdAsync(int userId, CancellationToken ct = default);
+    Task<InternProfileDto?> CreateAsync(CreateInternProfileRequest request, CancellationToken ct = default);
+    Task<InternProfileDto?> UpdateAsync(int userId, UpdateInternProfileRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }
 
@@ -70,7 +72,7 @@ public interface ILearningResourceService
 {
     Task<PaginatedResult<LearningResourceDto>> GetAllAsync(PaginationRequest pagination, LearningResourceFilter? filter = null, CancellationToken ct = default);
     Task<LearningResourceDetailDto?> GetByIdAsync(int id, CancellationToken ct = default);
-    Task<LearningResourceDto?> CreateAsync(CreateLearningResourceRequest request, CancellationToken ct = default);
+    Task<LearningResourceDto?> CreateAsync(CreateLearningResourceRequest request, int uploadedBy, CancellationToken ct = default);
     Task<LearningResourceDto?> UpdateAsync(int id, UpdateLearningResourceRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }
@@ -137,6 +139,11 @@ public interface ICommunicationService
     Task<CommunicationDto?> CreateAsync(CreateCommunicationRequest request, CancellationToken ct = default);
     Task<CommunicationDto?> UpdateAsync(int id, UpdateCommunicationRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+    Task<IEnumerable<ChatContactDto>> GetConversationsAsync(int userId, CancellationToken ct = default);
+    Task<PaginatedResult<CommunicationDto>> GetConversationMessagesAsync(int currentUserId, int otherUserId, PaginationRequest pagination, CancellationToken ct = default);
+    Task<PaginatedResult<CommunicationDto>> GetMyMessagesAsync(int currentUserId, int? otherUserId, PaginationRequest pagination, CancellationToken ct = default);
+    Task<int> GetUnreadCountAsync(int userId, CancellationToken ct = default);
+    Task MarkAsReadAsync(int senderId, int receiverId, CancellationToken ct = default);
 }
 
 public interface INotificationService
@@ -182,4 +189,169 @@ public interface IDepartmentService
     Task<DepartmentDto?> CreateAsync(CreateDepartmentRequest request, CancellationToken ct = default);
     Task<DepartmentDto?> UpdateAsync(int id, UpdateDepartmentRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+}
+
+public enum EmailTemplateType
+{
+    Welcome,
+    PasswordReset,
+    InterviewInvitation,
+    InterviewReminder,
+    ApplicationReceived,
+    ApplicationStatusUpdate,
+    TrainingEnrollment,
+    AssessmentNotification,
+    DailyLogReminder,
+    NewTaskAssigned,
+    TaskDeadlineReminder
+}
+
+public class EmailRequest
+{
+    public required string ToEmail { get; set; }
+    public required string ToName { get; set; }
+    public required string Subject { get; set; }
+    public required string HtmlContent { get; set; }
+    public EmailTemplateType TemplateType { get; set; }
+    public Dictionary<string, string>? Placeholders { get; set; }
+}
+
+public class InterviewEmailData
+{
+    public required string CandidateName { get; set; }
+    public string? CandidateEmail { get; set; }
+    public required string Position { get; set; }
+    public required DateTime InterviewDate { get; set; }
+    public required string StartTime { get; set; }
+    public required string Duration { get; set; }
+    public required string InterviewType { get; set; }
+    public string? MeetingLink { get; set; }
+    public string? Location { get; set; }
+    public required string InterviewerName { get; set; }
+    public string? InterviewerEmail { get; set; }
+}
+
+public class ApplicationEmailData
+{
+    public required string ApplicantName { get; set; }
+    public string? ApplicantEmail { get; set; }
+    public required string CampaignTitle { get; set; }
+    public required string Status { get; set; }
+    public string? StatusMessage { get; set; }
+    public string? NextSteps { get; set; }
+}
+
+public class TrainingEmailData
+{
+    public required string InternName { get; set; }
+    public string? InternEmail { get; set; }
+    public required string ProgramName { get; set; }
+    public required DateTime StartDate { get; set; }
+    public required DateTime EndDate { get; set; }
+    public required string Schedule { get; set; }
+    public string? Description { get; set; }
+}
+
+public class TaskEmailData
+{
+    public required string InternName { get; set; }
+    public string? InternEmail { get; set; }
+    public required string TaskTitle { get; set; }
+    public required string DueDate { get; set; }
+    public required string Priority { get; set; }
+    public string? Description { get; set; }
+    public required string AssignedByName { get; set; }
+}
+
+public interface IEmailService
+{
+    Task<bool> SendEmailAsync(EmailRequest request, CancellationToken ct = default);
+    Task<bool> SendWelcomeEmailAsync(string email, string name, string tempPassword, CancellationToken ct = default);
+    Task<bool> SendPasswordResetEmailAsync(string email, string name, string resetLink, CancellationToken ct = default);
+    Task<bool> SendInterviewInvitationAsync(InterviewEmailData data, CancellationToken ct = default);
+    Task<bool> SendInterviewReminderAsync(InterviewEmailData data, CancellationToken ct = default);
+    Task<bool> SendApplicationReceivedEmailAsync(ApplicationEmailData data, CancellationToken ct = default);
+    Task<bool> SendApplicationStatusUpdateEmailAsync(ApplicationEmailData data, CancellationToken ct = default);
+    Task<bool> SendTrainingEnrollmentEmailAsync(TrainingEmailData data, CancellationToken ct = default);
+    Task<bool> SendAssessmentNotificationAsync(string email, string internName, string assessmentType, DateTime dueDate, CancellationToken ct = default);
+    Task<bool> SendDailyLogReminderAsync(string email, string internName, CancellationToken ct = default);
+    Task<bool> SendNewTaskEmailAsync(TaskEmailData data, CancellationToken ct = default);
+    Task<bool> SendTaskDeadlineReminderAsync(TaskEmailData data, CancellationToken ct = default);
+}
+
+public class CalendarEventRequest
+{
+    public required string Summary { get; set; }
+    public string? Description { get; set; }
+    public required DateTime StartTime { get; set; }
+    public required DateTime EndTime { get; set; }
+    public string? Location { get; set; }
+    public List<string>? AttendeeEmails { get; set; }
+    public bool SendNotifications { get; set; } = true;
+    public List<int>? ReminderMinutes { get; set; }
+    public string? TimeZone { get; set; } = "Asia/Ho_Chi_Minh";
+}
+
+public class CalendarEventResponse
+{
+    public required string EventId { get; set; }
+    public required string HtmlLink { get; set; }
+    public string? MeetingLink { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class UserCalendarConnection
+{
+    public required int UserId { get; set; }
+    public required string GoogleRefreshToken { get; set; }
+    public DateTime ConnectedAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+}
+
+public interface ICalendarService
+{
+    Task<bool> IsUserConnectedAsync(int userId, CancellationToken ct = default);
+    Task<string> GetAuthorizationUrlAsync(int userId, CancellationToken ct = default);
+    Task<bool> HandleOAuthCallbackAsync(string code, int userId, CancellationToken ct = default);
+    Task<bool> DisconnectCalendarAsync(int userId, CancellationToken ct = default);
+    Task<CalendarEventResponse?> CreateEventAsync(int userId, CalendarEventRequest request, CancellationToken ct = default);
+    Task<CalendarEventResponse?> CreateInterviewEventAsync(int createdByUserId, int interviewId, CancellationToken ct = default);
+    Task<CalendarEventResponse?> CreateTrainingEventAsync(int createdByUserId, int programId, CancellationToken ct = default);
+    Task<CalendarEventResponse?> CreateTaskReminderEventAsync(int internUserId, int taskId, CancellationToken ct = default);
+    Task<bool> UpdateEventAsync(int userId, string eventId, CalendarEventRequest request, CancellationToken ct = default);
+    Task<bool> DeleteEventAsync(int userId, string eventId, CancellationToken ct = default);
+    Task<IEnumerable<CalendarEventResponse>> GetUpcomingEventsAsync(int userId, int maxResults = 10, CancellationToken ct = default);
+}
+
+public class ZoomMeetingRequest
+{
+    public required string Topic { get; set; }
+    public required DateTime StartTime { get; set; }
+    public int DurationMinutes { get; set; } = 60;
+    public string? Agenda { get; set; }
+    public List<string>? ParticipantEmails { get; set; }
+    public bool AutoRecord { get; set; } = false;
+    public string TimeZone { get; set; } = "Asia/Ho_Chi_Minh";
+}
+
+public class ZoomMeetingResponse
+{
+    public required string MeetingId { get; set; }
+    public required string Topic { get; set; }
+    public required string JoinUrl { get; set; }
+    public required string StartUrl { get; set; }
+    public string? Password { get; set; }
+    public DateTime StartTime { get; set; }
+    public int Duration { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public interface IZoomService
+{
+    Task<ZoomMeetingResponse?> CreateMeetingAsync(ZoomMeetingRequest request, CancellationToken ct = default);
+    Task<ZoomMeetingResponse?> CreateInterviewMeetingAsync(int interviewId, CancellationToken ct = default);
+    Task<ZoomMeetingResponse?> GetMeetingAsync(string meetingId, CancellationToken ct = default);
+    Task<bool> DeleteMeetingAsync(string meetingId, CancellationToken ct = default);
+    Task<string?> GetMeetingRecordingAsync(string meetingId, CancellationToken ct = default);
+    Task<IEnumerable<ZoomMeetingResponse>> GetUpcomingMeetingsAsync(int maxResults = 10, CancellationToken ct = default);
 }

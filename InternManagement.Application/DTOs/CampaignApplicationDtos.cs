@@ -5,6 +5,7 @@ namespace InternManagement.Application.DTOs;
 public record CampaignApplicationDto(
     int ApplicationId,
     int CampaignId,
+    string? CampaignTitle,
     string ApplicantEmail,
     string ApplicantName,
     string? ApplicantPhone,
@@ -48,12 +49,14 @@ public record UpdateCampaignApplicationRequest(
 public record CampaignApplicationFilter(
     string? Search,
     string? Status,
-    int? CampaignId);
+    int? CampaignId,
+    string? ApplicantEmail);
 
 public static class CampaignApplicationDtoExtensions
 {
     public static CampaignApplicationDto ToDto(this CampaignApplication entity) => new(
-        entity.ApplicationId, entity.CampaignId, entity.ApplicantEmail, entity.ApplicantName,
+        entity.ApplicationId, entity.CampaignId, null,
+        entity.ApplicantEmail, entity.ApplicantName,
         entity.ApplicantPhone, entity.CvUrl, entity.CoverLetter, entity.Status, entity.AppliedDate,
         entity.ReviewedBy, entity.ReviewedDate, entity.Notes);
 

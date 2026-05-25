@@ -17,11 +17,13 @@ public interface IUserRepository : IGenericRepository<User>
     Task<IEnumerable<UserDto>> GetAllDtoAsync(PaginationRequest pagination, UserFilter? filter = null, CancellationToken ct = default);
     Task<int> CountAsync(UserFilter? filter = null, CancellationToken ct = default);
     new Task UpdateAsync(User entity, CancellationToken ct = default);
+    Task<IEnumerable<ChatContactDto>> GetChatContactsAsync(int currentUserId, CancellationToken ct = default);
 }
 
 public interface IInternProfileRepository : IGenericRepository<InternProfile>
 {
     Task<InternProfileDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
+    Task<InternProfile?> GetByUserIdAsync(int userId, CancellationToken ct = default);
     Task<IEnumerable<InternProfileDto>> GetAllDtoAsync(PaginationRequest pagination, InternProfileFilter? filter = null, CancellationToken ct = default);
     Task<int> CountAsync(InternProfileFilter? filter = null, CancellationToken ct = default);
 }
@@ -107,6 +109,9 @@ public interface ICommunicationRepository : IGenericRepository<Communication>
     Task<CommunicationDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
     Task<IEnumerable<CommunicationDto>> GetAllDtoAsync(PaginationRequest pagination, CommunicationFilter? filter = null, CancellationToken ct = default);
     Task<int> CountAsync(CommunicationFilter? filter = null, CancellationToken ct = default);
+    Task<IEnumerable<ChatContactDto>> GetConversationsAsync(int userId, CancellationToken ct = default);
+    Task<IEnumerable<CommunicationDto>> GetMessagesBetweenUsersAsync(int? userId, int otherUserId, PaginationRequest pagination, CancellationToken ct = default);
+    Task MarkAllAsReadAsync(int senderId, int receiverId, CancellationToken ct = default);
 }
 
 public interface INotificationRepository : IGenericRepository<Notification>
@@ -128,6 +133,7 @@ public interface IAttendanceRepository : IGenericRepository<Attendance>
     Task<AttendanceDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
     Task<IEnumerable<AttendanceDto>> GetAllDtoAsync(PaginationRequest pagination, AttendanceFilter? filter = null, CancellationToken ct = default);
     Task<int> CountAsync(AttendanceFilter? filter = null, CancellationToken ct = default);
+    Task<string?> GetUserNameAsync(int userId, CancellationToken ct = default);
 }
 
 public interface ICertificateRepository : IGenericRepository<Certificate>
@@ -142,4 +148,10 @@ public interface IDepartmentRepository : IGenericRepository<Department>
     Task<DepartmentDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
     Task<IEnumerable<DepartmentDto>> GetAllDtoAsync(PaginationRequest pagination, DepartmentFilter? filter = null, CancellationToken ct = default);
     Task<int> CountAsync(DepartmentFilter? filter = null, CancellationToken ct = default);
+}
+
+public interface IAuditLogRepository
+{
+    Task AddAsync(AuditLog log, CancellationToken ct = default);
+    Task<(IEnumerable<AuditLog> Items, int Total)> GetAllAsync(int page, int pageSize, string? search, string? logType, CancellationToken ct = default);
 }

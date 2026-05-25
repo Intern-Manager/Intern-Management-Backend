@@ -17,13 +17,14 @@ public static class InterviewEndpoints
             [FromQuery] int? interviewerId,
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate,
+            [FromQuery] string? applicantEmail,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             IInterviewService service = null!,
             CancellationToken ct = default) =>
         {
             var pagination = new PaginationRequest(page, pageSize);
-            var filter = new InterviewFilter(null, status, campaignId, internId, interviewerId, fromDate, toDate);
+            var filter = new InterviewFilter(null, status, campaignId, internId, interviewerId, fromDate, toDate, applicantEmail);
             return await service.GetAllAsync(pagination, filter, ct);
         });
 

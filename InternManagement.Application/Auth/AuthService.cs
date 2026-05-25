@@ -1,14 +1,18 @@
 using InternManagement.Domain.Entities;
+using InternManagement.Application.DTOs;
+using InternManagement.Application.Repositories;
 
 namespace InternManagement.Application.Auth;
 
 public class AuthService(
     IUserRepository users,
     IRoleRepository roles,
+    IInternProfileRepository internProfiles,
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
     IRefreshTokenGenerator refreshTokenGenerator,
-    IRefreshTokenStore refreshTokenStore) : IAuthService
+    IRefreshTokenStore refreshTokenStore,
+    Services.IAuditLogService auditLog) : IAuthService
 {
     public async Task<RegisterResponse> RegisterAsync(RegisterRequest request, CancellationToken ct)
     {
@@ -43,6 +47,25 @@ public class AuthService(
 
         await users.AddAsync(user, ct);
 
+        // Auto-create InternProfile for Intern role
+        await internProfiles.AddAsync(new InternProfile
+        {
+            UserId = user.UserId,
+            CreatedAt = DateTime.UtcNow
+        }, ct);
+
+        // Audit log: User registered
+        await auditLog.LogAsync(new Services.AuditLogEntry
+        {
+            UserId = user.UserId,
+            UserName = user.FullName,
+            Action = "Registered",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"New user registered: {user.Email} (RoleId: {user.RoleId})",
+            LogType = "Security"
+        }, ct);
+
         return new RegisterResponse(
             user.UserId,
             user.FullName,
@@ -59,7 +82,18 @@ public class AuthService(
         var user = await users.FindByEmailAsync(request.Email, ct);
 
         if (user is null || !passwordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            // Audit log: Failed login attempt
+            await auditLog.LogAsync(new Services.AuditLogEntry
+            {
+                UserName = request.Email,
+                Action = "Login Failed",
+                EntityType = "User",
+                Description = $"Failed login attempt for: {request.Email}",
+                LogType = "Security"
+            }, ct);
             throw new InvalidOperationException("Invalid credentials.");
+        }
 
         var (accessToken, accessExpiresAt) = jwtTokenGenerator.CreateAccessToken(user);
         var (refreshToken, refreshExpiresAt) = refreshTokenGenerator.CreateRefreshToken();
@@ -70,6 +104,18 @@ public class AuthService(
             Token = refreshToken,
             ExpiresAt = refreshExpiresAt,
             CreatedAt = DateTime.UtcNow
+        }, ct);
+
+        // Audit log: Successful login
+        await auditLog.LogAsync(new Services.AuditLogEntry
+        {
+            UserId = user.UserId,
+            UserName = user.FullName,
+            Action = "Logged In",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"User logged in: {user.Email}",
+            LogType = "Security"
         }, ct);
 
         return new LoginResponse(
@@ -111,6 +157,18 @@ public class AuthService(
             CreatedAt = DateTime.UtcNow
         }, ct);
 
+        // Audit log: Token refreshed
+        await auditLog.LogAsync(new Services.AuditLogEntry
+        {
+            UserId = user.UserId,
+            UserName = user.FullName,
+            Action = "Token Refreshed",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"Token refreshed for: {user.Email}",
+            LogType = "Security"
+        }, ct);
+
         return new AuthTokens(accessToken, newRefreshToken, accessExpiresAt, refreshExpiresAt);
     }
 
@@ -123,7 +181,80 @@ public class AuthService(
         if (rt is null)
             return;
 
+        var user = await users.FindByIdAsync(rt.UserId, ct);
+
         await refreshTokenStore.RevokeAsync(rt, ct);
+
+        // Audit log: Logout
+        if (user != null)
+        {
+            await auditLog.LogAsync(new Services.AuditLogEntry
+            {
+                UserId = user.UserId,
+                UserName = user.FullName,
+                Action = "Logged Out",
+                EntityType = "User",
+                EntityId = user.UserId,
+                Description = $"User logged out: {user.Email}",
+                LogType = "Security"
+            }, ct);
+        }
+    }
+
+    public async Task ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+            throw new InvalidOperationException("Email is required.");
+
+        var user = await users.FindByEmailAsync(request.Email, ct);
+        // Always return success to prevent email enumeration
+        // In production, you would send an email here
+        if (user is null)
+            return;
+
+        // Audit log: Password reset requested
+        await auditLog.LogAsync(new Services.AuditLogEntry
+        {
+            UserId = user.UserId,
+            UserName = user.FullName,
+            Action = "Password Reset Requested",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"Password reset requested for: {request.Email}",
+            LogType = "Security"
+        }, ct);
+
+        // TODO: Send password reset email
+        // For now, just log (in production, integrate with email service)
+        Console.WriteLine($"Password reset requested for: {request.Email}");
+    }
+
+    public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+            throw new InvalidOperationException("Token and new password are required.");
+
+        if (request.NewPassword.Length < 6)
+            throw new InvalidOperationException("Password must be at least 6 characters.");
+
+        // TODO: Validate token from email link
+        // For now, this is a simplified implementation
+        // In production, store reset tokens in database with expiry
+
+        // Find user by token (simplified - in production use a token store)
+        // This would require a PasswordResetToken entity
+        throw new InvalidOperationException("Password reset is not yet fully implemented. Please contact support.");
+    }
+
+    public async Task VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+            throw new InvalidOperationException("Verification token is required.");
+
+        var user = await users.FindByIdAsync(0, ct); // Placeholder - would look up by token
+        // In production, verify token and update EmailVerified = true
+        // For now, this is a placeholder
+        Console.WriteLine($"Email verification attempted with token: {request.Token}");
     }
 }
 

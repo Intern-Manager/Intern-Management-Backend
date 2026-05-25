@@ -6,6 +6,7 @@ namespace InternManagement.API.Services;
 public class CloudinaryService
 {
     private readonly Cloudinary _cloudinary;
+    private readonly string _cloudName;
 
     public CloudinaryService(IConfiguration configuration)
     {
@@ -18,6 +19,7 @@ public class CloudinaryService
 
         var account = new Account(cloudName, apiKey, apiSecret);
         _cloudinary = new Cloudinary(account);
+        _cloudName = cloudName;
     }
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string folder, CancellationToken ct = default)
@@ -59,7 +61,6 @@ public class CloudinaryService
         }
         else
         {
-            // Raw upload for PDF, DOC, etc.
             var uploadParams = new RawUploadParams
             {
                 File = new FileDescription(fileName, fileStream),
@@ -75,6 +76,42 @@ public class CloudinaryService
         }
 
         return url;
+    }
+
+    public async Task<(byte[] Data, string ContentType, string FileName)?> DownloadFileAsync(string publicUrl, CancellationToken ct = default)
+    {
+        var publicId = ExtractPublicId(publicUrl);
+        if (string.IsNullOrEmpty(publicId))
+            return null;
+
+        var uri = new Uri(publicUrl);
+        var path = uri.AbsolutePath;
+        var fileName = Path.GetFileName(path);
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        
+        var contentType = ext switch
+        {
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
+
+        try
+        {
+            var downloadUrl = _cloudinary.DownloadPrivate(publicId, expiresAt: DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds());
+            using var client = new HttpClient();
+            var bytes = await client.GetByteArrayAsync(downloadUrl, ct);
+            return (bytes, contentType, fileName);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public async Task<bool> DeleteFileAsync(string publicUrl, CancellationToken ct = default)

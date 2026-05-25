@@ -9,17 +9,20 @@ public class UserService : IUserService
     private readonly IPasswordHasher _passwordHasher;
     private readonly Auth.IRoleRepository _roleRepository;
     private readonly IImageUploadService _imageUploadService;
+    private readonly IAuditLogService _auditLog;
 
     public UserService(
         Repositories.IUserRepository repository,
         IPasswordHasher passwordHasher,
         Auth.IRoleRepository roleRepository,
-        IImageUploadService imageUploadService)
+        IImageUploadService imageUploadService,
+        IAuditLogService auditLog)
     {
         _repository = repository;
         _passwordHasher = passwordHasher;
         _roleRepository = roleRepository;
         _imageUploadService = imageUploadService;
+        _auditLog = auditLog;
     }
 
     public async Task<PaginatedResult<UserDto>> GetAllAsync(PaginationRequest pagination, UserFilter? filter = null, CancellationToken ct = default)
@@ -35,6 +38,13 @@ public class UserService : IUserService
 
     public async Task<UserDetailDto?> GetByIdAsync(int id, CancellationToken ct = default)
         => await _repository.GetDetailByIdAsync(id, ct);
+
+    public async Task<UserDetailDto?> GetByEmailAsync(string email, CancellationToken ct = default)
+    {
+        var user = await _repository.FindByEmailAsync(email, ct);
+        if (user is null) return null;
+        return await _repository.GetDetailByIdAsync(user.UserId, ct);
+    }
 
     public async Task<UserDto?> CreateAsync(CreateUserRequest request, CancellationToken ct = default)
     {
@@ -66,6 +76,19 @@ public class UserService : IUserService
         };
 
         await _repository.AddAsync(user, ct);
+
+        // Audit log
+        await _auditLog.LogAsync(new AuditLogEntry
+        {
+            UserId = user.UserId,
+            UserName = user.FullName,
+            Action = "Created",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"Created user: {user.Email} (RoleId: {user.RoleId})",
+            LogType = "Data"
+        }, ct);
+
         return user.ToDto();
     }
 
@@ -74,14 +97,26 @@ public class UserService : IUserService
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null) return null;
 
-        if (request.FullName is not null) user.FullName = request.FullName;
-        if (request.Phone is not null) user.Phone = request.Phone;
-        if (request.AvatarUrl is not null) user.AvatarUrl = request.AvatarUrl;
-        if (request.RoleId.HasValue) user.RoleId = request.RoleId.Value;
-        if (request.Status is not null) user.Status = request.Status;
+        var changes = new List<string>();
+        if (request.FullName is not null) { changes.Add($"FullName: {user.FullName} -> {request.FullName}"); user.FullName = request.FullName; }
+        if (request.Phone is not null) { changes.Add($"Phone: {user.Phone} -> {request.Phone}"); user.Phone = request.Phone; }
+        if (request.AvatarUrl is not null) { changes.Add("AvatarUrl updated"); user.AvatarUrl = request.AvatarUrl; }
+        if (request.RoleId.HasValue) { changes.Add($"RoleId: {user.RoleId} -> {request.RoleId.Value}"); user.RoleId = request.RoleId.Value; }
+        if (request.Status is not null) { changes.Add($"Status: {user.Status} -> {request.Status}"); user.Status = request.Status; }
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(user, ct);
+
+        // Audit log
+        await _auditLog.LogAsync(new AuditLogEntry
+        {
+            Action = "Updated",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"Updated user {user.Email}: {string.Join(", ", changes)}",
+            LogType = "Data"
+        }, ct);
+
         return user.ToDto();
     }
 
@@ -90,20 +125,54 @@ public class UserService : IUserService
         var user = await _repository.GetByIdAsync(id, ct);
         if (user is null) return false;
 
-        // Upload to Cloudinary and get the URL
         var avatarUrl = await _imageUploadService.UploadAvatarAsync(base64Image, ct);
         
         user.AvatarUrl = avatarUrl;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(user, ct);
+
+        // Audit log
+        await _auditLog.LogAsync(new AuditLogEntry
+        {
+            UserId = user.UserId,
+            UserName = user.FullName,
+            Action = "Updated Avatar",
+            EntityType = "User",
+            EntityId = user.UserId,
+            Description = $"Updated avatar for user: {user.Email}",
+            LogType = "Data"
+        }, ct);
+
         return true;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
+        var user = await _repository.GetByIdAsync(id, ct);
         if (!await _repository.ExistsAsync(id, ct)) return false;
         await _repository.DeleteAsync(id, ct);
+
+        // Audit log
+        if (user != null)
+        {
+            await _auditLog.LogAsync(new AuditLogEntry
+            {
+                UserId = user.UserId,
+                UserName = user.FullName,
+                Action = "Deleted",
+                EntityType = "User",
+                EntityId = user.UserId,
+                Description = $"Deleted user: {user.Email}",
+                LogType = "Data"
+            }, ct);
+        }
+
         return true;
+    }
+
+    public async Task<IEnumerable<ChatContactDto>> GetChatContactsAsync(int currentUserId, CancellationToken ct = default)
+    {
+        return await _repository.GetChatContactsAsync(currentUserId, ct);
     }
 }

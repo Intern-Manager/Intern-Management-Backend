@@ -7,10 +7,14 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddApplication()
+builder.Services.AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddPresentation(builder.Configuration);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 524288000L; // 500 MB
+});
 
 var app = builder.Build();
 
@@ -23,10 +27,10 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors();
 
+app.MapPresentation();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapPresentation();
 
 var displayUrl = app.Urls.FirstOrDefault(u => u.StartsWith("https")) ?? app.Urls.FirstOrDefault() ?? "https://localhost:5131";
 Console.WriteLine();

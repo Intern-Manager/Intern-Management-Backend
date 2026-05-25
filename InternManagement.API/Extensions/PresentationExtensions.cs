@@ -21,9 +21,10 @@ public static class PresentationExtensions
             options.AddDefaultPolicy(policy =>
             {
                 policy
-                    .AllowAnyOrigin()
+                    .SetIsOriginAllowed(_ => true)
                     .AllowAnyMethod()
-                    .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowCredentials();
             });
         });
 
@@ -49,7 +50,9 @@ public static class PresentationExtensions
                     {
                         var accessToken = context.Request.Query["access_token"];
                         var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+                        if (!string.IsNullOrEmpty(accessToken) && (
+                            path.StartsWithSegments("/hubs/notifications") ||
+                            path.StartsWithSegments("/hubs/chat")))
                         {
                             context.Token = accessToken;
                         }
@@ -59,7 +62,6 @@ public static class PresentationExtensions
             });
 
         services.AddAuthorization();
-        services.AddScoped<CloudinaryService>();
         services.AddSignalR();
 
         return services;
@@ -74,14 +76,18 @@ public static class PresentationExtensions
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Intern Management API V1");
         });
 
-        // Map SignalR hub
+        // Map SignalR hubs
         app.MapHub<NotificationHub>("/hubs/notifications");
+        app.MapHub<ChatHub>("/hubs/chat");
 
         // Map all CRUD endpoints
         app.MapAllEndpoints();
 
         // Upload endpoints (no auth required for public use)
         app.MapUploadEndpoints();
+
+        // Audit logs endpoint
+        app.MapAuditLogEndpoints();
 
         // Auth endpoints
         var auth = app.MapGroup("/auth");
@@ -129,6 +135,39 @@ public static class PresentationExtensions
         {
             await svc.LogoutAsync(req, ct);
             return Results.NoContent();
+        });
+
+        auth.MapPost("/forgot-password", async (ForgotPasswordRequest req, IAuthService svc, CancellationToken ct) =>
+        {
+            await svc.ForgotPasswordAsync(req, ct);
+            // Always return success to prevent email enumeration
+            return Results.Ok(new { message = "If an account exists with this email, a password reset link has been sent." });
+        });
+
+        auth.MapPost("/reset-password", async (ResetPasswordRequest req, IAuthService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.ResetPasswordAsync(req, ct);
+                return Results.Ok(new { message = "Password has been reset successfully." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+        });
+
+        auth.MapPost("/verify-email", async (VerifyEmailRequest req, IAuthService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.VerifyEmailAsync(req, ct);
+                return Results.Ok(new { message = "Email verified successfully." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
         });
 
         return app;

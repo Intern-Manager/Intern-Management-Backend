@@ -4,33 +4,52 @@ using Microsoft.Extensions.Configuration;
 
 namespace InternManagement.Application.Services;
 
-public interface IImageUploadService
+public class CloudinaryUploadService : IImageUploadService
 {
-    Task<string> UploadAvatarAsync(string base64Image, CancellationToken ct = default);
-}
+    private readonly Cloudinary? _cloudinary;
+    private readonly string _cloudName;
+    private readonly bool _isConfigured;
 
-public class CloudinaryService : IImageUploadService
-{
-    private readonly Cloudinary _cloudinary;
-
-    public CloudinaryService(IConfiguration configuration)
+    public CloudinaryUploadService(IConfiguration configuration)
     {
-        var cloudName = configuration["Cloudinary:CloudName"];
-        var apiKey = configuration["Cloudinary:ApiKey"];
-        var apiSecret = configuration["Cloudinary:ApiSecret"];
+        try
+        {
+            var cloudName = configuration["Cloudinary:CloudName"];
+            var apiKey = configuration["Cloudinary:ApiKey"];
+            var apiSecret = configuration["Cloudinary:ApiSecret"];
 
-        var account = new Account(cloudName, apiKey, apiSecret);
-        _cloudinary = new Cloudinary(account);
+            if (!string.IsNullOrEmpty(cloudName) && !string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
+            {
+                var account = new Account(cloudName, apiKey, apiSecret);
+                _cloudinary = new Cloudinary(account);
+                _cloudName = cloudName;
+                _isConfigured = true;
+            }
+            else
+            {
+                _isConfigured = false;
+                _cloudName = string.Empty;
+            }
+        }
+        catch
+        {
+            _isConfigured = false;
+            _cloudName = string.Empty;
+        }
     }
 
     public async Task<string> UploadAvatarAsync(string base64Image, CancellationToken ct = default)
     {
+        if (!_isConfigured || _cloudinary == null)
+        {
+            throw new InvalidOperationException("Cloudinary is not configured");
+        }
+
         if (string.IsNullOrWhiteSpace(base64Image))
         {
             throw new ArgumentException("Base64 image data is required", nameof(base64Image));
         }
 
-        // Remove data:image/...;base64, prefix if present
         var base64Data = base64Image.Contains(',')
             ? base64Image.Split(',')[1]
             : base64Image;

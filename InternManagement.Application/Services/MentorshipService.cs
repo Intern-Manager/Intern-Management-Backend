@@ -6,8 +6,13 @@ namespace InternManagement.Application.Services;
 public class MentorshipService : IMentorshipService
 {
     private readonly IMentorshipRepository _repository;
+    private readonly INotificationService _notificationService;
 
-    public MentorshipService(IMentorshipRepository repository) => _repository = repository;
+    public MentorshipService(IMentorshipRepository repository, INotificationService notificationService)
+    {
+        _repository = repository;
+        _notificationService = notificationService;
+    }
 
     public async Task<PaginatedResult<MentorshipDto>> GetAllAsync(PaginationRequest pagination, MentorshipFilter? filter = null, CancellationToken ct = default)
     {
@@ -24,6 +29,26 @@ public class MentorshipService : IMentorshipService
         var entity = request.ToEntity();
         entity.CreatedAt = DateTime.UtcNow;
         await _repository.AddAsync(entity, ct);
+
+        // Notify intern about internship assignment
+        try
+        {
+            await _notificationService.CreateAsync(new CreateNotificationRequest(
+                request.InternId, "In-App", "Internship",
+                "Welcome to Your Internship!",
+                $"You have been assigned to the program starting {request.StartDate:MMM d, yyyy}." +
+                $" Please check your schedule and reach out to your mentor for onboarding.",
+                entity.MentorshipId, "Mentorship"), ct);
+
+            // Also notify mentor
+            await _notificationService.CreateAsync(new CreateNotificationRequest(
+                request.MentorId, "In-App", "Internship",
+                "New Intern Assigned",
+                $"A new intern has been assigned to your mentorship. Please review their profile and get in touch.",
+                entity.MentorshipId, "Mentorship"), ct);
+        }
+        catch { /* don't fail if notification fails */ }
+
         return entity.ToDto();
     }
 

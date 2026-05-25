@@ -24,6 +24,12 @@ public static class UserEndpoints
             return await service.GetAllAsync(pagination, filter, ct);
         });
 
+        group.MapGet("/by-email", async (string email, IUserService service, CancellationToken ct) =>
+        {
+            var result = await service.GetByEmailAsync(email, ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        });
+
         group.MapGet("/{id:int}", async (int id, IUserService service, CancellationToken ct) =>
         {
             var result = await service.GetByIdAsync(id, ct);

@@ -33,6 +33,7 @@ public class User
 public class InternProfile
 {
     public int InternId { get; set; }
+    public int UserId { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? University { get; set; }
@@ -44,8 +45,12 @@ public class InternProfile
     public string? CvUrl { get; set; }
     public string? LinkedinUrl { get; set; }
     public string? GithubUrl { get; set; }
+    public string? GoogleRefreshToken { get; set; }
+    public DateTime? GoogleTokenExpiry { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    public User? User { get; set; }
 }
 
 public class InternshipCampaign
@@ -139,6 +144,10 @@ public class Mentorship
     public DateOnly? EndDate { get; set; }
     public string Status { get; set; } = "Active";
     public DateTime CreatedAt { get; set; }
+
+    public User? Mentor { get; set; }
+    public User? Intern { get; set; }
+    public TrainingProgram? Program { get; set; }
 }
 
 public class TaskItem
@@ -308,6 +317,20 @@ public class Certificate
     public DateOnly IssuedDate { get; set; }
     public string? CertificateUrl { get; set; }
     public int IssuedBy { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class AuditLog
+{
+    public int AuditLogId { get; set; }
+    public int? UserId { get; set; }
+    public string? UserName { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string EntityType { get; set; } = string.Empty;
+    public int? EntityId { get; set; }
+    public string? Description { get; set; }
+    public string? IpAddress { get; set; }
+    public string LogType { get; set; } = "Info";
     public DateTime CreatedAt { get; set; }
 }
 

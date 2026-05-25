@@ -45,5 +45,8 @@ public interface IAuthService
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken ct);
     Task<AuthTokens> RefreshAsync(RefreshTokenRequest request, CancellationToken ct);
     Task LogoutAsync(LogoutRequest request, CancellationToken ct);
+    Task ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken ct);
+    Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct);
+    Task VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct);
 }
 
